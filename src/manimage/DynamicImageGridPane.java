@@ -81,9 +81,11 @@ public class DynamicImageGridPane extends GridPane {
 
         items[6] = new MenuItem("Delete");
         items[6].setOnAction(event -> {
-            if (getFirstSelected() != null) {
-                getImageSet().remove(getFirstSelected().getInfo());
-            }
+            final ArrayList<ImageInfo> infoList = new ArrayList<>();
+
+            selected.forEach(select -> infoList.add(select.getInfo()));
+
+            infoList.forEach(info -> getImageSet().remove(info));
         });
 
         contextMenu = new ContextMenu(items);
@@ -208,13 +210,18 @@ public class DynamicImageGridPane extends GridPane {
     }
 
     private void updateImageViews() {
-        ArrayList<ImageInfo> infoList = (ArrayList<ImageInfo>) imageSet.getInfoList().clone();
+        if (getImageSet() == null) {
+            getChildren().clear();
+            return;
+        }
+
+        ArrayList<ImageInfo> infoList = (ArrayList<ImageInfo>) getImageSet().getInfoList().clone();
         if (sortMethod != null) infoList.sort(sortMethod);
 
         int i = 0;
         for (ImageInfo info : infoList) {
             GridImageView existingView = null;
-            if (i < getChildrenUnmodifiable().size()) existingView = (GridImageView) getChildrenUnmodifiable().get(i);
+            if (i < getCount()) existingView = imageViews.get(i);
 
             if (existingView != null) {
                 existingView.setInfo(info);
@@ -239,10 +246,10 @@ public class DynamicImageGridPane extends GridPane {
             i++;
         }
 
-        int size = getChildren().size();
-        if (i < size) {
+        if (i < getChildren().size()) {
             //Remove all unused ImageViews
-            getChildren().remove(i, size);
+            getChildren().remove(i, getChildren().size());
+            imageViews.removeAll(imageViews.subList(i, imageViews.size()));
         }
 
         updateVisibleThumbnails();
