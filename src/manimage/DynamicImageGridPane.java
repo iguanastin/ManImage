@@ -146,10 +146,10 @@ public class DynamicImageGridPane extends GridPane {
 
     private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
-            clearSelected();
+            selected.clear();
         } else if (shiftDown && !selected.isEmpty()) {
             GridImageView first = getFirstSelected();
-            clearSelected();
+            selected.clear();
             selected.addAll(getContentsInRange(getIndex(first), getIndex(view)));
         } else if (ctrlDown) {
             if (!view.isSelected()) {
@@ -158,7 +158,7 @@ public class DynamicImageGridPane extends GridPane {
                 selected.remove(view);
             }
         } else {
-            clearSelected();
+            selected.clear();
 
             if (!view.isSelected()) {
                 selected.add(view);
@@ -181,14 +181,16 @@ public class DynamicImageGridPane extends GridPane {
         updateImageViews();
     }
 
-    public void setImageSet(ImageSet imageSet) {
+    void setImageSet(ImageSet imageSet) {
         if (this.imageSet != null) {
             this.imageSet.removeListener(imageSetListener);
         }
 
         this.imageSet = imageSet;
 
-        imageSet.addListener(imageSetListener);
+        if (imageSet != null) {
+            imageSet.addListener(imageSetListener);
+        }
     }
 
     //------------------------ Updaters --------------------------------------------------------------------------------
