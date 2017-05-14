@@ -6,6 +6,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -94,6 +95,25 @@ public class DynamicImageGridPane extends GridPane {
 
         setOnMouseClicked(event -> clearSelected());
         setOnScroll(event -> updateVisibleThumbnails());
+        setOnKeyTyped(event -> {
+            if (event.getCode().isArrowKey()) {
+                int index = 0;
+                if (getLastSelected() != null) index = imageViews.indexOf(getLastSelected());
+                else if (getFirstSelected() != null) index = imageViews.indexOf(getFirstSelected());
+
+                if (event.getCode() == KeyCode.RIGHT) index++;
+                if (event.getCode() == KeyCode.LEFT) index--;
+                if (event.getCode() == KeyCode.DOWN) index += 4;
+                if (event.getCode() == KeyCode.UP) index -= 4;
+
+                if (index < 0) index = 0;
+                if (index >= getCount()) index = getCount() - 1;
+
+                select(imageViews.get(index), event.isShiftDown(), event.isControlDown());
+            }
+
+            //TODO: Figure out where keyevents actually happen
+        });
     }
 
     //------------------------ Getters ---------------------------------------------------------------------------------

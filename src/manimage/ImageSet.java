@@ -1,9 +1,8 @@
 package manimage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -13,6 +12,16 @@ public class ImageSet {
 
     private final ArrayList<ImageSetListener> listeners = new ArrayList<>();
 
+
+    //------------------ Loader/Savers ---------------------------------------------------------------------------------
+
+    void loadXML(File file) throws IOException {
+        //TODO: Implement XML loading
+    }
+
+    void saveXML(File file) throws IOException {
+        //TODO: Implement XML saving
+    }
 
     //------------- Modifiers ------------------------------------------------------------------------------------------
 
