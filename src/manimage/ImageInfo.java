@@ -53,6 +53,11 @@ public class ImageInfo {
         return unloadImage() || unloadThumbnail();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ImageInfo && ((ImageInfo) obj).getFile().equals(getFile());
+    }
+
     //-------------- Checkers ------------------------------------------------------------------------------------------
 
     boolean isImageLoaded() {
@@ -76,7 +81,8 @@ public class ImageInfo {
     //--------------- Getters ------------------------------------------------------------------------------------------
 
     Image getThumbnail(boolean backgroundLoading) {
-        if (thumbnail == null) thumbnail = new Image(file.toURI().toASCIIString(), thumbnailSize, thumbnailSize, true, true, backgroundLoading);
+        if (thumbnail == null)
+            thumbnail = new Image(file.toURI().toASCIIString(), thumbnailSize, thumbnailSize, true, true, backgroundLoading);
 
         return thumbnail;
     }
@@ -119,7 +125,8 @@ public class ImageInfo {
 
     void setFile(File file) {
         if (!file.exists()) throw new IllegalArgumentException("File must exist");
-        if (!Main.IMAGE_FILTER.accept(file)) throw new IllegalArgumentException("File must be of image type: *.png, *.jpg, *.jpeg, *.gif");
+        if (!Main.IMAGE_FILTER.accept(file))
+            throw new IllegalArgumentException("File must be of image type: *.png, *.jpg, *.jpeg, *.gif");
 
         this.file = file;
     }

@@ -20,7 +20,6 @@ import java.util.List;
 public class DynamicImageGridPane extends GridPane {
 
     private final List<GridImageView> contents = new ArrayList<>();
-
     private final List<GridImageView> selected = new ArrayList<>();
 
     private final ContextMenu contextMenu;
@@ -36,7 +35,7 @@ public class DynamicImageGridPane extends GridPane {
         items[1] = new MenuItem("View");
         items[1].setOnAction(event -> {
             try {
-                Desktop.getDesktop().open(selected.get(0).getInfo().getFile());
+                Desktop.getDesktop().open(getFirstSelected().getInfo().getFile());
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -48,7 +47,7 @@ public class DynamicImageGridPane extends GridPane {
         items[3].setOnAction(event -> {
             if (!selected.isEmpty()) {
                 try {
-                    Runtime.getRuntime().exec("explorer.exe /select, " + selected.get(0).getInfo().getFile().getAbsolutePath());
+                    Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getFile().getAbsolutePath());
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -63,11 +62,8 @@ public class DynamicImageGridPane extends GridPane {
 
         //------------------ Listeners ---------------------------------------------------------------------------------
 
-        setOnMouseClicked(event -> {
-            select(null, event.isShiftDown(), event.isControlDown());
-        });
+        setOnMouseClicked(event -> clearSelected());
         setOnScroll(event -> updateVisibleThumbnails());
-        setOnContextMenuRequested(event -> contextMenu.show(this, event.getScreenX(), event.getScreenY()));
     }
 
     private void updateVisibleThumbnails() {
@@ -144,10 +140,10 @@ public class DynamicImageGridPane extends GridPane {
 
     private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
-            selected.clear();
+            clearSelected();
         } else if (shiftDown && !selected.isEmpty()) {
-            GridImageView first = selected.get(0);
-            selected.clear();
+            GridImageView first = getFirstSelected();
+            clearSelected();
             selected.addAll(getContentsInRange(getIndex(first), getIndex(view)));
         } else if (ctrlDown) {
             if (!view.isSelected()) {
@@ -156,7 +152,7 @@ public class DynamicImageGridPane extends GridPane {
                 selected.remove(view);
             }
         } else {
-            selected.clear();
+            clearSelected();
 
             if (!view.isSelected()) {
                 selected.add(view);
@@ -190,6 +186,19 @@ public class DynamicImageGridPane extends GridPane {
         for (GridImageView view : contents) {
             view.setSelected(selected.contains(view));
         }
+    }
+
+    private GridImageView getFirstSelected() {
+        return getFirstSelected();
+    }
+
+    private GridImageView getLastSelected() {
+        return selected.get(selected.size()-1);
+    }
+
+    private void clearSelected() {
+        selected.clear();
+        updateSelected();
     }
 
 }
