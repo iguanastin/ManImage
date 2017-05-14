@@ -14,37 +14,59 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 
 public class DynamicImageGridPane extends GridPane {
 
-    private final List<GridImageView> contents = new ArrayList<>();
+    private final List<GridImageView> imageViews = new ArrayList<>();
     private final List<GridImageView> selected = new ArrayList<>();
+
+    private ImageSet imageSet;
+    private Comparator<ImageInfo> sortMethod;
 
     private final ContextMenu contextMenu;
 
+    private final ImageSetListener imageSetListener = new ImageSetListener() {
+        @Override
+        public void onImageAdded(ImageInfo info) {
+            updateImageViews();
+        }
+
+        @Override
+        public void onImageRemoved(ImageInfo info) {
+            updateImageViews();
+        }
+    };
+
+
+    //----------------- Constructors -----------------------------------------------------------------------------------
 
     public DynamicImageGridPane() {
 
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
-        MenuItem[] items = new MenuItem[6];
+        MenuItem[] items = new MenuItem[7];
         items[0] = new MenuItem("Edit Tags");
 
-        items[1] = new MenuItem("View");
-        items[1].setOnAction(event -> {
-            try {
-                Desktop.getDesktop().open(getFirstSelected().getInfo().getFile());
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        items[1] = new MenuItem("View Info");
+
+        items[2] = new SeparatorMenuItem();
+
+        items[3] = new MenuItem("Open");
+        items[3].setOnAction(event -> {
+            if (getFirstSelected() != null) {
+                try {
+                    Desktop.getDesktop().open(getFirstSelected().getInfo().getFile());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
-        items[2] = new MenuItem("View Info");
-
-        items[3] = new MenuItem("Show in Folder");
-        items[3].setOnAction(event -> {
+        items[4] = new MenuItem("View in Folder");
+        items[4].setOnAction(event -> {
             if (!selected.isEmpty()) {
                 try {
                     Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getFile().getAbsolutePath());
@@ -54,9 +76,9 @@ public class DynamicImageGridPane extends GridPane {
             }
         });
 
-        items[4] = new SeparatorMenuItem();
+        items[5] = new SeparatorMenuItem();
 
-        items[5] = new MenuItem("Delete");
+        items[6] = new MenuItem("Delete");
 
         contextMenu = new ContextMenu(items);
 
@@ -66,64 +88,10 @@ public class DynamicImageGridPane extends GridPane {
         setOnScroll(event -> updateVisibleThumbnails());
     }
 
-    private void updateVisibleThumbnails() {
-        ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
-        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
-
-        for (Node n : getChildrenUnmodifiable()) {
-            Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
-
-            if (n instanceof GridImageView && !((GridImageView) n).isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
-                ((GridImageView) n).loadThumbnail(true);
-
-                System.out.println(getRowIndex(n));
-            }
-        }
-    }
-
-    boolean add(File file, boolean recurse) {
-        if (!file.exists()) return false;
-
-        if (Main.IMAGE_FILTER.accept(file)) {
-            if (getCount() / columnWidth() >= rowHeight()) getRowConstraints().add(new RowConstraints(150, 150, 150));
-
-            GridImageView view = new GridImageView(new ImageInfo(file));
-            add(view, getCount() % columnWidth(), getCount() / columnWidth());
-            contents.add(view);
-            view.setOnMouseClicked(event -> {
-                if (event.getButton() == MouseButton.PRIMARY || selected.isEmpty()) select(view, event.isShiftDown(), event.isControlDown());
-            });
-            view.setOnContextMenuRequested(event -> {
-                if (!view.isSelected()) select(view, false, false);
-                contextMenu.show(this, event.getScreenX(), event.getScreenY());
-            });
-
-            updateVisibleThumbnails();
-
-            return true;
-        } else {
-            return file.isDirectory() && addAll(file.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER), recurse);
-        }
-    }
-
-    boolean addAll(File[] files, boolean recurse) {
-        boolean result = false;
-
-        if (files == null || files.length == 0) return false;
-
-        for (File file : files) {
-            if (recurse || !file.isDirectory()) {
-                if (add(file, recurse)) {
-                    result = true;
-                }
-            }
-        }
-
-        return result;
-    }
+    //------------------------ Getters ---------------------------------------------------------------------------------
 
     private int getCount() {
-        return contents.size();
+        return imageViews.size();
     }
 
     private int columnWidth() {
@@ -137,6 +105,44 @@ public class DynamicImageGridPane extends GridPane {
     private int getIndex(Node n) {
         return columnWidth() * getRowIndex(n) + getColumnIndex(n);
     }
+
+    public ImageSet getImageSet() {
+        return imageSet;
+    }
+
+    private GridImageView getFirstSelected() {
+        if (!selected.isEmpty()) {
+            return selected.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private GridImageView getLastSelected() {
+        return selected.get(selected.size() - 1);
+    }
+
+    private List<GridImageView> getContentsInRange(int start, int end) {
+        List<GridImageView> result = new ArrayList<>();
+
+        if (start == end) {
+            result.add(imageViews.get(start));
+        }
+
+        if (start < end) {
+            for (; start <= end; start++) {
+                result.add(imageViews.get(start));
+            }
+        } else {
+            for (; start >= end; start--) {
+                result.add(imageViews.get(start));
+            }
+        }
+
+        return result;
+    }
+
+    //------------------ Modifiers -------------------------------------------------------------------------------------
 
     private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
@@ -162,43 +168,89 @@ public class DynamicImageGridPane extends GridPane {
         updateSelected();
     }
 
-    private List<GridImageView> getContentsInRange(int start, int end) {
-        List<GridImageView> result = new ArrayList<>();
-
-        if (start == end) {
-            result.add(contents.get(start));
-        }
-
-        if (start < end) {
-            for (; start <= end; start++) {
-                result.add(contents.get(start));
-            }
-        } else {
-            for (; start >= end; start--) {
-                result.add(contents.get(start));
-            }
-        }
-
-        return result;
+    private void clearSelected() {
+        selected.clear();
+        updateSelected();
     }
 
+    //---------------------- Setters -----------------------------------------------------------------------------------
+
+    void setSortMethod(Comparator<ImageInfo> c) {
+        this.sortMethod = c;
+
+        updateImageViews();
+    }
+
+    public void setImageSet(ImageSet imageSet) {
+        if (this.imageSet != null) {
+            this.imageSet.removeListener(imageSetListener);
+        }
+
+        this.imageSet = imageSet;
+
+        imageSet.addListener(imageSetListener);
+    }
+
+    //------------------------ Updaters --------------------------------------------------------------------------------
+
     private void updateSelected() {
-        for (GridImageView view : contents) {
+        for (GridImageView view : imageViews) {
             view.setSelected(selected.contains(view));
         }
     }
 
-    private GridImageView getFirstSelected() {
-        return getFirstSelected();
+    private void updateImageViews() {
+        ArrayList<ImageInfo> infoList = (ArrayList<ImageInfo>) imageSet.getInfoList().clone();
+        if (sortMethod != null) infoList.sort(sortMethod);
+
+        int i = 0;
+        for (ImageInfo info : infoList) {
+            GridImageView existingView = null;
+            if (i < getChildrenUnmodifiable().size()) existingView = (GridImageView) getChildrenUnmodifiable().get(i);
+
+            if (existingView != null) {
+                existingView.setInfo(info);
+            } else {
+                if (getCount() / columnWidth() >= rowHeight())
+                    getRowConstraints().add(new RowConstraints(150, 150, 150));
+
+                GridImageView view = new GridImageView(info);
+                add(view, getCount() % columnWidth(), getCount() / columnWidth());
+                imageViews.add(view);
+                view.setOnMouseClicked(event -> {
+                    if (event.getButton() == MouseButton.PRIMARY || selected.isEmpty())
+                        select(view, event.isShiftDown(), event.isControlDown());
+                });
+                view.setOnContextMenuRequested(event -> {
+                    if (!view.isSelected()) select(view, false, false);
+                    contextMenu.show(this, event.getScreenX(), event.getScreenY());
+                });
+            }
+
+            i++;
+        }
+
+        if (i < getChildren().size()) {
+            //Remove all unused ImageViews
+            getChildren().removeAll(getChildren().subList(i + 1, getChildren().size()));
+        }
+
+        updateVisibleThumbnails();
     }
 
-    private GridImageView getLastSelected() {
-        return selected.get(selected.size()-1);
-    }
+    private void updateVisibleThumbnails() {
+        ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
+        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
 
-    private void clearSelected() {
-        selected.clear();
-        updateSelected();
+        for (Node n : getChildrenUnmodifiable()) {
+            Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
+
+            if (n instanceof GridImageView && !((GridImageView) n).isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
+                ((GridImageView) n).loadThumbnail(true);
+
+                System.out.println(getRowIndex(n));
+            }
+        }
     }
 
 }

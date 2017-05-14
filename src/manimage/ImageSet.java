@@ -2,6 +2,8 @@ package manimage;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -14,7 +16,7 @@ public class ImageSet {
 
     //------------- Modifiers ------------------------------------------------------------------------------------------
 
-    boolean addImage(ImageInfo info) {
+    boolean add(ImageInfo info) {
         if (!hasImage(info)) {
             images.add(info);
 
@@ -26,7 +28,11 @@ public class ImageSet {
         return false;
     }
 
-    boolean removeImage(ImageInfo info) {
+    void addAll(ArrayList<ImageInfo> infos) {
+        infos.forEach(this::add);
+    }
+
+    boolean remove(ImageInfo info) {
         if (hasImage(info)) {
             images.remove(info);
 
@@ -38,10 +44,38 @@ public class ImageSet {
         return false;
     }
 
-    boolean initAndAddImage(File file) {
+    boolean initAndAdd(File file) {
+        if (!Main.IMAGE_FILTER.accept(file)) return false;
+
         ImageInfo info = new ImageInfo(file);
 
-        return addImage(info);
+        return add(info);
+    }
+
+    void initAndAddAll(List<File> files) {
+        files.forEach(this::initAndAdd);
+    }
+
+    void initAndAddSubfiles(File folder, boolean recurse) {
+        if (folder.isDirectory()) {
+            File[] files;
+
+            if (recurse) {
+                 files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
+            } else {
+                 files = folder.listFiles(Main.IMAGE_FILTER);
+            }
+
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        initAndAddSubfiles(file, recurse);
+                    } else {
+                        initAndAdd(file);
+                    }
+                }
+            }
+        }
     }
 
     //--------------- Getters ------------------------------------------------------------------------------------------

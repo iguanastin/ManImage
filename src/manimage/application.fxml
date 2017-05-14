@@ -22,7 +22,7 @@
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" onAction="#addFileClicked" text="Add File(s)"/>
+                        <MenuItem mnemonicParsing="false" onAction="#addFilesClicked" text="Add File(s)"/>
                         <MenuItem mnemonicParsing="false" onAction="#addFolderClicked" text="Add Folder"/>
                         <MenuItem mnemonicParsing="false" onAction="#addRecurseFolderClicked"
                                   text="Add Folders Recursively"/>

@@ -15,7 +15,7 @@ public class GridImageView extends BorderPane {
 
     private boolean selected = false;
 
-    private static final String selectedBackgroundColor = "88AADD";
+    private static final String selectedBackgroundColor = "5588AA";
     private static final String backgroundColor = "DDDDDD";
 
 
@@ -37,6 +37,10 @@ public class GridImageView extends BorderPane {
 
     ImageInfo getInfo() {
         return info;
+    }
+
+    void setInfo(ImageInfo info) {
+        this.info = info;
     }
 
     void loadThumbnail(boolean backgroundLoading) {

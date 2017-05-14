@@ -19,11 +19,13 @@ public class Controller {
     public Label previewTagsLabel;
     private ImageInfo currentPreview;
 
+    private ImageSet imageSet = new ImageSet();
+
     private File lastFolder;
 
     @FXML
     public void initialize() {
-
+        grid.setImageSet(imageSet);
     }
 
     void preview(ImageInfo info) {
@@ -34,7 +36,7 @@ public class Controller {
         previewTagsLabel.setText(info.getTags().toString());
     }
 
-    public void addFileClicked(ActionEvent event) {
+    public void addFilesClicked(ActionEvent event) {
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
@@ -44,7 +46,7 @@ public class Controller {
         if (files == null || files.isEmpty()) {
             //Canceled
         } else {
-            grid.addAll(files.toArray(new File[files.size()]), false);
+            imageSet.initAndAddAll(files);
 
             lastFolder = files.get(0).getParentFile();
         }
@@ -59,7 +61,7 @@ public class Controller {
         if (folder == null) {
             //Canceled
         } else {
-            grid.add(folder, false);
+            imageSet.initAndAddSubfiles(folder, false);
 
             lastFolder = folder.getParentFile();
         }
@@ -74,7 +76,7 @@ public class Controller {
         if (folder == null) {
             //Canceled
         } else {
-            grid.add(folder, true);
+            imageSet.initAndAddSubfiles(folder, true);
 
             lastFolder = folder.getParentFile();
         }
