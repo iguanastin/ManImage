@@ -37,6 +37,7 @@ public class DynamicImageGridPane extends GridPane {
         @Override
         public void onImageRemoved(ImageInfo info) {
             updateImageViews();
+            clearSelected();
         }
     };
 
@@ -79,6 +80,11 @@ public class DynamicImageGridPane extends GridPane {
         items[5] = new SeparatorMenuItem();
 
         items[6] = new MenuItem("Delete");
+        items[6].setOnAction(event -> {
+            if (getFirstSelected() != null) {
+                getImageSet().remove(getFirstSelected().getInfo());
+            }
+        });
 
         contextMenu = new ContextMenu(items);
 
@@ -212,6 +218,7 @@ public class DynamicImageGridPane extends GridPane {
 
             if (existingView != null) {
                 existingView.setInfo(info);
+                existingView.loadThumbnail(true);
             } else {
                 if (getCount() / columnWidth() >= rowHeight())
                     getRowConstraints().add(new RowConstraints(150, 150, 150));
@@ -232,9 +239,10 @@ public class DynamicImageGridPane extends GridPane {
             i++;
         }
 
-        if (i < getChildren().size()) {
+        int size = getChildren().size();
+        if (i < size) {
             //Remove all unused ImageViews
-            getChildren().removeAll(getChildren().subList(i + 1, getChildren().size()));
+            getChildren().remove(i, size);
         }
 
         updateVisibleThumbnails();
@@ -249,8 +257,6 @@ public class DynamicImageGridPane extends GridPane {
 
             if (n instanceof GridImageView && !((GridImageView) n).isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
                 ((GridImageView) n).loadThumbnail(true);
-
-                System.out.println(getRowIndex(n));
             }
         }
     }
