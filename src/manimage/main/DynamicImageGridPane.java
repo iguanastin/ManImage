@@ -1,15 +1,20 @@
 package manimage.main;
 
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
-import javafx.scene.control.ContextMenu;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import manimage.common.ImageInfo;
 import manimage.common.ImageSet;
 import manimage.common.ImageSetListener;
@@ -51,15 +56,26 @@ public class DynamicImageGridPane extends GridPane {
 
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
-        MenuItem[] items = new MenuItem[7];
-        items[0] = new MenuItem("Edit Tags");
+        MenuItem[] items = new MenuItem[8];
+        items[0] = new MenuItem("Edit");
+        items[0].setOnAction(event -> {
+            if (selected.size() == 1) {
+                Main.MAIN.openSingleEditor();
+            } else if (selected.size() > 1) {
+                //TODO: Implement multi-image editor
+            }
+        });
 
         items[1] = new MenuItem("View Info");
 
-        items[2] = new SeparatorMenuItem();
+        items[2] = new Menu("Set Rating...");
+        ((Menu)items[2]).getItems().addAll(new MenuItem("★"), new MenuItem("★★"), new MenuItem("★★★"), new MenuItem("★★★★"), new MenuItem("★★★★★"));
+        //TODO: Implement rating edit
 
-        items[3] = new MenuItem("Open");
-        items[3].setOnAction(event -> {
+        items[3] = new SeparatorMenuItem();
+
+        items[4] = new MenuItem("Open");
+        items[4].setOnAction(event -> {
             if (getFirstSelected() != null) {
                 try {
                     Desktop.getDesktop().open(getFirstSelected().getInfo().getFile());
@@ -69,8 +85,8 @@ public class DynamicImageGridPane extends GridPane {
             }
         });
 
-        items[4] = new MenuItem("View in Folder");
-        items[4].setOnAction(event -> {
+        items[5] = new MenuItem("View in Folder");
+        items[5].setOnAction(event -> {
             if (!selected.isEmpty()) {
                 try {
                     Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getFile().getAbsolutePath());
@@ -80,15 +96,17 @@ public class DynamicImageGridPane extends GridPane {
             }
         });
 
-        items[5] = new SeparatorMenuItem();
+        items[6] = new SeparatorMenuItem();
 
-        items[6] = new MenuItem("Delete");
-        items[6].setOnAction(event -> {
+        items[7] = new MenuItem("Delete");
+        items[7].setOnAction(event -> {
             final ArrayList<ImageInfo> infoList = new ArrayList<>();
 
             selected.forEach(select -> infoList.add(select.getInfo()));
 
             infoList.forEach(info -> getImageSet().remove(info));
+
+            //TODO: Actual delete/move to recycle bin
         });
 
         contextMenu = new ContextMenu(items);

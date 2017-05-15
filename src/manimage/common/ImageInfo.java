@@ -21,6 +21,7 @@ public class ImageInfo {
     private int width = -1;
     private int height = -1;
     private int rating = -1;
+    private ImageHistogram histogram;
 
     public static final int thumbnailSize = 140;
 
@@ -68,6 +69,10 @@ public class ImageInfo {
         return thumbnail != null;
     }
 
+    public boolean isSimilar(ImageInfo other, double alpha) {
+        return getHistogram().isSimilar(other.getHistogram(), alpha);
+    }
+
     public boolean hasTag(String tag) {
         for (String str : tags) {
             if (str.equalsIgnoreCase(tag)) {
@@ -95,6 +100,16 @@ public class ImageInfo {
         }
 
         return image;
+    }
+
+    public ImageHistogram getHistogram() {
+        try {
+            if (histogram == null) histogram = ImageHistogram.getHistogram(getImage(false));
+        } catch (HistogramReadException ex){
+            ex.printStackTrace();
+        }
+
+        return histogram;
     }
 
     public int getRating() {

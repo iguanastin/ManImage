@@ -26,7 +26,7 @@ public class GridImageView extends BorderPane {
         setMinSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
         setMaxSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
 
-        setOnMouseEntered(event -> Main.controller.preview(getInfo()));
+        setOnMouseEntered(event -> Main.mainController.preview(getInfo()));
         setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY) setSelected(!isSelected());
         });
