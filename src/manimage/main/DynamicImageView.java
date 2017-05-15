@@ -1,4 +1,4 @@
-package manimage;
+package manimage.main;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;

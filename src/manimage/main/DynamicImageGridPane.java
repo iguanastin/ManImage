@@ -1,4 +1,4 @@
-package manimage;
+package manimage.main;
 
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -10,9 +10,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import manimage.common.ImageInfo;
+import manimage.common.ImageSet;
+import manimage.common.ImageSetListener;
 
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;

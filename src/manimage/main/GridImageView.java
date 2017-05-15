@@ -1,11 +1,10 @@
-package manimage;
+package manimage.main;
 
 
 import javafx.geometry.Insets;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
+import manimage.common.ImageInfo;
 
 public class GridImageView extends BorderPane {
 

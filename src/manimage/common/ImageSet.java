@@ -1,4 +1,6 @@
-package manimage;
+package manimage.common;
+
+import manimage.main.Main;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,17 +17,17 @@ public class ImageSet {
 
     //------------------ Loader/Savers ---------------------------------------------------------------------------------
 
-    void loadXML(File file) throws IOException {
+    public void loadXML(File file) throws IOException {
         //TODO: Implement XML loading
     }
 
-    void saveXML(File file) throws IOException {
+    public void saveXML(File file) throws IOException {
         //TODO: Implement XML saving
     }
 
     //------------- Modifiers ------------------------------------------------------------------------------------------
 
-    boolean add(ImageInfo info) {
+    public boolean add(ImageInfo info) {
         if (!hasImage(info)) {
             images.add(info);
 
@@ -37,11 +39,11 @@ public class ImageSet {
         return false;
     }
 
-    void addAll(ArrayList<ImageInfo> infos) {
+    public void addAll(ArrayList<ImageInfo> infos) {
         infos.forEach(this::add);
     }
 
-    boolean remove(ImageInfo info) {
+    public boolean remove(ImageInfo info) {
         if (hasImage(info)) {
             images.remove(info);
 
@@ -53,7 +55,7 @@ public class ImageSet {
         return false;
     }
 
-    boolean initAndAdd(File file) {
+    public boolean initAndAdd(File file) {
         if (!Main.IMAGE_FILTER.accept(file)) return false;
 
         ImageInfo info = new ImageInfo(file);
@@ -61,11 +63,11 @@ public class ImageSet {
         return add(info);
     }
 
-    void initAndAddAll(List<File> files) {
+    public void initAndAddAll(List<File> files) {
         files.forEach(this::initAndAdd);
     }
 
-    void initAndAddSubfiles(File folder, boolean recurse) {
+    public void initAndAddSubfiles(File folder, boolean recurse) {
         if (folder.isDirectory()) {
             File[] files;
 
@@ -89,11 +91,11 @@ public class ImageSet {
 
     //--------------- Getters ------------------------------------------------------------------------------------------
 
-    ArrayList<ImageInfo> getInfoList() {
+    public ArrayList<ImageInfo> getInfoList() {
         return images;
     }
 
-    ArrayList<ImageInfo> getDisconnectedImageInfos() {
+    public ArrayList<ImageInfo> getDisconnectedImageInfos() {
         ArrayList<ImageInfo> result = new ArrayList<>();
 
         images.forEach(info -> {
@@ -105,7 +107,7 @@ public class ImageSet {
         return result;
     }
 
-    ImageInfo getInfoFor(File file) {
+    public ImageInfo getInfoFor(File file) {
         for (ImageInfo info : images) {
             if (info.getFile().equals(file)) {
                 return info;
@@ -117,23 +119,23 @@ public class ImageSet {
 
     //---------------- Checkers ----------------------------------------------------------------------------------------
 
-    boolean hasImage(ImageInfo info) {
+    public boolean hasImage(ImageInfo info) {
         return images.contains(info);
     }
 
     //----------------- Listeners --------------------------------------------------------------------------------------
 
-    void addListener(ImageSetListener listener) {
+    public void addListener(ImageSetListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);
         }
     }
 
-    boolean removeListener(ImageSetListener listener) {
+    public boolean removeListener(ImageSetListener listener) {
         return listeners.remove(listener);
     }
 
-    void clearListeners() {
+    public void clearListeners() {
         listeners.clear();
     }
 

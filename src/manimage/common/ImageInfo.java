@@ -1,10 +1,10 @@
-package manimage;
+package manimage.common;
 
 
 import javafx.scene.image.Image;
+import manimage.main.Main;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +27,7 @@ public class ImageInfo {
 
     //------------- Constructors ---------------------------------------------------------------------------------------
 
-    public ImageInfo(File file) {
+    ImageInfo(File file) {
         setFile(file);
 
         addTag("tagme");
@@ -35,21 +35,21 @@ public class ImageInfo {
 
     //----------- Functionality ----------------------------------------------------------------------------------------
 
-    boolean unloadImage() {
+    public boolean unloadImage() {
         if (image == null) return false;
 
         image = null;
         return true;
     }
 
-    boolean unloadThumbnail() {
+    public boolean unloadThumbnail() {
         if (thumbnail == null) return false;
 
         thumbnail = null;
         return true;
     }
 
-    boolean unloadAll() {
+    public boolean unloadAll() {
         return unloadImage() || unloadThumbnail();
     }
 
@@ -60,15 +60,15 @@ public class ImageInfo {
 
     //-------------- Checkers ------------------------------------------------------------------------------------------
 
-    boolean isImageLoaded() {
+    public boolean isImageLoaded() {
         return image != null;
     }
 
-    boolean isThumbnailLoaded() {
+    public boolean isThumbnailLoaded() {
         return thumbnail != null;
     }
 
-    boolean hasTag(String tag) {
+    public boolean hasTag(String tag) {
         for (String str : tags) {
             if (str.equalsIgnoreCase(tag)) {
                 return true;
@@ -80,14 +80,14 @@ public class ImageInfo {
 
     //--------------- Getters ------------------------------------------------------------------------------------------
 
-    Image getThumbnail(boolean backgroundLoading) {
+    public Image getThumbnail(boolean backgroundLoading) {
         if (thumbnail == null)
             thumbnail = new Image(file.toURI().toASCIIString(), thumbnailSize, thumbnailSize, true, true, backgroundLoading);
 
         return thumbnail;
     }
 
-    Image getImage(boolean backgroundLoading) {
+    public Image getImage(boolean backgroundLoading) {
         if (image == null) {
             image = new Image(file.toURI().toASCIIString(), backgroundLoading);
             width = (int) image.getWidth();
@@ -97,23 +97,23 @@ public class ImageInfo {
         return image;
     }
 
-    int getRating() {
+    public int getRating() {
         return rating;
     }
 
-    File getFile() {
+    public File getFile() {
         return file;
     }
 
-    int getWidth() {
+    public int getWidth() {
         return width;
     }
 
-    int getHeight() {
+    public int getHeight() {
         return height;
     }
 
-    URL getSource() {
+    public URL getSource() {
         return source;
     }
 
@@ -123,7 +123,7 @@ public class ImageInfo {
 
     //------------------- Setters --------------------------------------------------------------------------------------
 
-    void setFile(File file) {
+    public void setFile(File file) {
         if (!file.exists()) throw new IllegalArgumentException("File must exist");
         if (!Main.IMAGE_FILTER.accept(file))
             throw new IllegalArgumentException("File must be of image type: *.png, *.jpg, *.jpeg, *.gif");
@@ -131,22 +131,22 @@ public class ImageInfo {
         this.file = file;
     }
 
-    void setRating(int rating) {
+    public void setRating(int rating) {
         if (rating < 0 || rating > 5) throw new IllegalArgumentException("Rating must be in rage [0, 5]");
 
         this.rating = rating;
     }
 
-    void setSource(URL source) {
+    public void setSource(URL source) {
         this.source = source;
     }
 
-    boolean addTag(String tag) {
+    public boolean addTag(String tag) {
         if (hasTag(tag)) return false;
         return tags.add(tag);
     }
 
-    boolean removeTag(String tag) {
+    public boolean removeTag(String tag) {
         if (hasTag(tag)) {
             Iterator<String> tagIterator = tags.iterator();
             while (tagIterator.hasNext()) {

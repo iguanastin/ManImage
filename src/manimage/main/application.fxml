@@ -11,12 +11,12 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import manimage.DynamicImageGridPane?>
-<?import manimage.DynamicImageView?>
+<?import manimage.main.DynamicImageGridPane?>
+<?import manimage.main.DynamicImageView?>
 
 <SplitPane dividerPositions="1.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
            orientation="VERTICAL" prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.112"
-           xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.Controller">
+           xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.MainController">
     <items>
         <MenuBar>
             <menus>
@@ -43,8 +43,8 @@
                     <items>
                         <BorderPane>
                             <center>
-                                <manimage.DynamicImageView fx:id="previewDynamicImageView" pickOnBounds="true"
-                                                           BorderPane.alignment="CENTER"/>
+                                <manimage.main.DynamicImageView fx:id="previewDynamicImageView" pickOnBounds="true"
+                                                                BorderPane.alignment="CENTER"/>
                             </center>
                         </BorderPane>
                         <Label fx:id="previewTagsLabel" text="Tags">

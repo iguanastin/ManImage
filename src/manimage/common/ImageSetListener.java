@@ -1,4 +1,4 @@
-package manimage;
+package manimage.common;
 
 
 public interface ImageSetListener {

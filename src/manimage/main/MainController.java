@@ -1,4 +1,4 @@
-package manimage;
+package manimage.main;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -7,11 +7,13 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import manimage.common.ImageInfo;
+import manimage.common.ImageSet;
 
 import java.io.File;
 import java.util.List;
 
-public class Controller {
+public class MainController {
 
     public DynamicImageView previewDynamicImageView;
 

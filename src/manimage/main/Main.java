@@ -1,4 +1,4 @@
-package manimage;
+package manimage.main;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -11,17 +11,17 @@ import java.io.FileFilter;
 
 public class Main extends Application {
 
-    static Stage mainStage;
-    static Controller controller;
+    public static Stage mainStage;
+    public static MainController controller;
 
-    static final FileFilter IMAGE_FILTER = file -> {
+    public static final FileFilter IMAGE_FILTER = file -> {
         String name = file.getName().toLowerCase();
         return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif");
     };
 
-    static final FileFilter IMAGE_AND_DIRECTORY_FILTER = file -> file.isDirectory() || IMAGE_FILTER.accept(file);
+    public static final FileFilter IMAGE_AND_DIRECTORY_FILTER = file -> file.isDirectory() || IMAGE_FILTER.accept(file);
 
-    static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
+    public static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
 
 
     @Override
