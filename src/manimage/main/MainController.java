@@ -16,18 +16,22 @@ import java.util.List;
 public class MainController {
 
     public DynamicImageView previewDynamicImageView;
-
     public DynamicImageGridPane grid;
     public Label previewTagsLabel;
-    private ImageInfo currentPreview;
+
+    //TODO: Clean up C style handling
+    //TODO: Add database loading functionality
 
     private ImageSet imageSet = new ImageSet();
-
+    private ImageInfo currentPreview;
     private File lastFolder;
+
 
     @FXML
     public void initialize() {
         grid.setImageSet(imageSet);
+
+        //TODO: Swap to using databases
     }
 
     void preview(ImageInfo info) {

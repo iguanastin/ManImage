@@ -48,10 +48,14 @@ public class Main extends Application {
 
     public Main() {
         MAIN = this;
+
+        //TODO: Change design to not require poor singleton Main
     }
 
     public void openSingleEditor() {
         singleEditorStage.show();
+
+        //TODO: Implement targeting of specific ImageInfo
     }
 
     @Override
@@ -69,6 +73,8 @@ public class Main extends Application {
             ex.printStackTrace();
             exit();
         }
+        //TODO: Implement database loading/selecting by user
+        //TODO: Implement database checking/initializing on connect
 
         //------------ Build main stage --------------------------------------------------------------------------------
 
@@ -79,7 +85,6 @@ public class Main extends Application {
         mainController = loader.getController();
 
         primaryStage.setTitle("Test");
-        primaryStage.setOnCloseRequest(event -> System.out.println("Exiting via window control"));
         primaryStage.setScene(new Scene(mainRoot, 1600, 900));
 
         primaryStage.show();
@@ -90,9 +95,10 @@ public class Main extends Application {
 
         Parent singleEditorRoot = FXMLLoader.load(getClass().getResource("../editors/singleeditor.fxml"));
 
+        //TODO: Refactor fxml file locations to be consistent
+
         singleEditorStage.setScene(new Scene(singleEditorRoot));
         singleEditorStage.setTitle("Edit Image");
-
     }
 
     public static void exit() {
@@ -103,6 +109,8 @@ public class Main extends Application {
                 ex.printStackTrace();
             }
         }
+
+        //TODO: Refactor all exits to go through this route to ensure safe disconnects from database
 
         System.exit(0);
     }

@@ -14,16 +14,8 @@ public class ImageSet {
 
     private final ArrayList<ImageSetListener> listeners = new ArrayList<>();
 
+    //TODO: Modify this class to handle database operations and ImageInfo management
 
-    //------------------ Loader/Savers ---------------------------------------------------------------------------------
-
-    public void loadXML(File file) throws IOException {
-        //TODO: Implement XML loading
-    }
-
-    public void saveXML(File file) throws IOException {
-        //TODO: Implement XML saving
-    }
 
     //------------- Modifiers ------------------------------------------------------------------------------------------
 

@@ -1,10 +1,7 @@
 package manimage.main;
 
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -13,8 +10,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import manimage.common.ImageInfo;
 import manimage.common.ImageSet;
 import manimage.common.ImageSetListener;
@@ -29,9 +24,11 @@ import java.util.List;
 public class DynamicImageGridPane extends GridPane {
 
     private final List<GridImageView> imageViews = new ArrayList<>();
+    //TODO: Centralize this array instead of getChildren()
     private final List<GridImageView> selected = new ArrayList<>();
 
     private ImageSet imageSet;
+    //TODO: Update to use database instead
     private Comparator<ImageInfo> sortMethod;
 
     private final ContextMenu contextMenu;
@@ -61,12 +58,15 @@ public class DynamicImageGridPane extends GridPane {
         items[0].setOnAction(event -> {
             if (selected.size() == 1) {
                 Main.MAIN.openSingleEditor();
+                //TODO: Implement single-image editor
             } else if (selected.size() > 1) {
+                //TODO: Create multi-image editor
                 //TODO: Implement multi-image editor
             }
         });
 
         items[1] = new MenuItem("View Info");
+        //TODO: Implement info viewing
 
         items[2] = new Menu("Set Rating...");
         ((Menu)items[2]).getItems().addAll(new MenuItem("★"), new MenuItem("★★"), new MenuItem("★★★"), new MenuItem("★★★★"), new MenuItem("★★★★★"));
@@ -113,7 +113,7 @@ public class DynamicImageGridPane extends GridPane {
 
         //------------------ Listeners ---------------------------------------------------------------------------------
 
-        setOnMouseClicked(event -> clearSelected());
+        setOnMouseClicked(event -> clearSelected()); //TODO: Make this actually work; event is never fired
         setOnScroll(event -> updateVisibleThumbnails());
         setOnKeyTyped(event -> {
             if (event.getCode().isArrowKey()) {
@@ -170,7 +170,7 @@ public class DynamicImageGridPane extends GridPane {
         return selected.get(selected.size() - 1);
     }
 
-    private List<GridImageView> getContentsInRange(int start, int end) {
+    private List<GridImageView> getViewsInRange(int start, int end) {
         List<GridImageView> result = new ArrayList<>();
 
         if (start == end) {
@@ -198,7 +198,7 @@ public class DynamicImageGridPane extends GridPane {
         } else if (shiftDown && !selected.isEmpty()) {
             GridImageView first = getFirstSelected();
             selected.clear();
-            selected.addAll(getContentsInRange(getIndex(first), getIndex(view)));
+            selected.addAll(getViewsInRange(getIndex(first), getIndex(view)));
         } else if (ctrlDown) {
             if (!view.isSelected()) {
                 selected.add(view);
@@ -257,6 +257,7 @@ public class DynamicImageGridPane extends GridPane {
 
         ArrayList<ImageInfo> infoList = (ArrayList<ImageInfo>) getImageSet().getInfoList().clone();
         if (sortMethod != null) infoList.sort(sortMethod);
+        //TODO: Improve efficiency of sorting image list
 
         int i = 0;
         for (ImageInfo info : infoList) {

@@ -25,6 +25,9 @@ public class ImageInfo {
 
     public static final int thumbnailSize = 140;
 
+    //TODO: Modify this class to use information from the database and make updates to the database
+    //TODO: Add imageID field corresponding to database image_id
+
 
     //------------- Constructors ---------------------------------------------------------------------------------------
 
@@ -33,6 +36,7 @@ public class ImageInfo {
 
         addTag("tagme");
     }
+    //TODO: Add constructor that constructs from database image
 
     //----------- Functionality ----------------------------------------------------------------------------------------
 
@@ -57,6 +61,8 @@ public class ImageInfo {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof ImageInfo && ((ImageInfo) obj).getFile().equals(getFile());
+
+        //TODO: Modify to compare imageID fields
     }
 
     //-------------- Checkers ------------------------------------------------------------------------------------------

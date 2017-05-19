@@ -18,6 +18,8 @@ public final class ImageHistogram {
 
 
     private ImageHistogram(Image image) throws HistogramReadException {
+        //TODO: Add image fingerprinting to check against image to see if histogram needs to be updated
+
         pixelCount = (long)(image.getWidth()*image.getHeight());
 
         for (int i = 0; i < 256; i++) {
@@ -71,6 +73,8 @@ public final class ImageHistogram {
             dg += Math.abs(green[i] - other.green[i]);
             db += Math.abs(blue[i] - other.blue[i]);
         }
+
+        //TODO: Test this method more and see what kinds of confidence values are best
 
         return 1 - (da+dr+dg+db)/8;
     }
