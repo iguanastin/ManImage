@@ -9,14 +9,19 @@ import java.util.Arrays;
 
 public final class ImageHistogram {
 
-    private final long[] red = new long[256];
-    private final long[] green = new long[256];
-    private final long[] blue = new long[256];
+    private final double[] alpha = new double[256];
+    private final double[] red = new double[256];
+    private final double[] green = new double[256];
+    private final double[] blue = new double[256];
+
+    private final long pixelCount;
 
 
     private ImageHistogram(Image image) throws HistogramReadException {
+        pixelCount = (long)(image.getWidth()*image.getHeight());
+
         for (int i = 0; i < 256; i++) {
-            red[i] = green[i] = blue[i] = 0;
+            alpha[i] = red[i] = green[i] = blue[i] = 0;
         }
 
         PixelReader pixelReader = image.getPixelReader();
@@ -27,15 +32,28 @@ public final class ImageHistogram {
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 int argb = pixelReader.getArgb(x, y);
+                int a = (0xff & (argb >> 24));
                 int r = (0xff & (argb >> 16));
                 int g = (0xff & (argb >> 8));
                 int b = (0xff & argb);
 
+                alpha[a]++;
                 red[r]++;
                 green[g]++;
                 blue[b]++;
             }
         }
+
+        for (int i = 0; i < 256; i++) {
+            alpha[i] /= getPixelCount();
+            red[i] /= getPixelCount();
+            green[i] /= getPixelCount();
+            blue[i] /= getPixelCount();
+        }
+    }
+
+    public long getPixelCount() {
+        return pixelCount;
     }
 
     public static ImageHistogram getHistogram(Image image) throws HistogramReadException {
@@ -45,22 +63,20 @@ public final class ImageHistogram {
     }
 
     public double getSimilarity(ImageHistogram other) {
+        double da = 0, dr = 0, dg = 0, db = 0;
+
         for (int i = 0; i < 256; i++) {
-            if (red[i] == 0 && other.red[i] == 0) red[i] = other.red[i] = 1;
-            if (green[i] == 0 && other.green[i] == 0) green[i] = other.green[i] = 1;
-            if (blue[i] == 0 && other.blue[i] == 0) blue[i] = other.blue[i] = 1;
+            da += Math.abs(alpha[i] - other.alpha[i]);
+            dr += Math.abs(red[i] - other.red[i]);
+            dg += Math.abs(green[i] - other.green[i]);
+            db += Math.abs(blue[i] - other.blue[i]);
         }
 
-        ChiSquareTest test = new ChiSquareTest();
-        double pRed = test.chiSquareTestDataSetsComparison(red, other.red);
-        double pGreen = test.chiSquareTestDataSetsComparison(green, other.green);
-        double pBlue = test.chiSquareTestDataSetsComparison(blue, other.blue);
-
-        return (pRed + pGreen + pBlue)/3;
+        return 1 - (da+dr+dg+db)/8;
     }
 
-    public boolean isSimilar(ImageHistogram other, double alpha) {
-        return getSimilarity(other) <= alpha;
+    public boolean isSimilar(ImageHistogram other, double confidence) {
+        return getSimilarity(other) >= confidence;
     }
 
 }
