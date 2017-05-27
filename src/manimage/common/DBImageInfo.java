@@ -2,11 +2,6 @@ package manimage.common;
 
 
 import javafx.scene.image.Image;
-import manimage.main.ImageDatabase;
-import manimage.main.Main;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class DBImageInfo {
 
@@ -16,9 +11,9 @@ public class DBImageInfo {
 
     private String path;
     private String source;
-    private final int id;
     private byte rating;
-    private long timeAdded;
+    private final int id;
+    private final long timeAdded;
 
     boolean pathChanged = false, sourceChanged = false, ratingChanged = false;
 
@@ -125,7 +120,7 @@ public class DBImageInfo {
 
     //------------- Setters --------------------------------------------------------------------------------------------
 
-    public synchronized void markChangeApplied() {
+    public synchronized void markChangeCommitted() {
         pathChanged = sourceChanged = ratingChanged = false;
     }
 
