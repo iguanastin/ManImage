@@ -46,6 +46,8 @@ public class DynamicImageGridPane extends GridPane {
         }
     };
 
+    private final int THUMBNAIL_SIZE = 140;
+
 
     //----------------- Constructors -----------------------------------------------------------------------------------
 

@@ -3,9 +3,9 @@ package manimage.common;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
-import org.apache.commons.math3.stat.inference.ChiSquareTest;
 
-import java.util.Arrays;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 public final class ImageHistogram {
 
@@ -20,7 +20,19 @@ public final class ImageHistogram {
     private ImageHistogram(Image image) throws HistogramReadException {
         //TODO: Add image fingerprinting to check against image to see if histogram needs to be updated
 
-        pixelCount = (long)(image.getWidth()*image.getHeight());
+        if (image.isBackgroundLoading()) {
+            final Thread thisThread = Thread.currentThread();
+            image.progressProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue.equals(1)) thisThread.notify(); //Notify this thread as soon as the image finishes loading
+            });
+
+            try {
+                wait();
+            } catch (InterruptedException e) {
+            }
+        }
+
+        pixelCount = (long) (image.getWidth() * image.getHeight());
 
         for (int i = 0; i < 256; i++) {
             alpha[i] = red[i] = green[i] = blue[i] = 0;
@@ -76,11 +88,28 @@ public final class ImageHistogram {
 
         //TODO: Test this method more and see what kinds of confidence values are best
 
-        return 1 - (da+dr+dg+db)/8;
+        return 1 - (da + dr + dg + db) / 8;
     }
 
     public boolean isSimilar(ImageHistogram other, double confidence) {
         return getSimilarity(other) >= confidence;
+    }
+
+    public static ArrayList<DBImageInfo> getDuplicates(ArrayList<DBImageInfo> infos, double confidence) {
+        ArrayList<DBImageInfo> results = new ArrayList<>();
+
+        //TODO: Modify to return a pair with an associated similarity
+
+        for (int i = 0; i < infos.size(); i++) {
+            for (int j = i + 1; j < infos.size(); j++) {
+                ImageHistogram hist1 = infos.get(i).getHistogram(), hist2 = infos.get(j).getHistogram();
+                if (hist1 != null && hist2 != null && hist1.isSimilar(hist2, confidence)) {
+                    results.add(infos.get(i));
+                }
+            }
+        }
+
+        return results;
     }
 
 }
