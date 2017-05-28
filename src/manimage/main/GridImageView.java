@@ -46,7 +46,6 @@ public class GridImageView extends BorderPane {
 
     void unloadThumbnail() {
         view.setImage(null);
-        info.unloadThumbnail();
     }
 
     boolean isThumbnailLoaded() {

@@ -3,10 +3,12 @@ package manimage.common;
 
 import javafx.scene.image.Image;
 
+import java.lang.ref.WeakReference;
+
 public class DBImageInfo {
 
-    private Image image;
-    private Image thumbnail;
+    private WeakReference<Image> image;
+    private WeakReference<Image> thumbnail;
     private ImageHistogram histogram;
 
     private String path;
@@ -45,35 +47,7 @@ public class DBImageInfo {
         toBeInserted = true;
     }
 
-    //------------------- Operators ------------------------------------------------------------------------------------
-
-    public synchronized boolean unloadImage() {
-        if (image == null) return false;
-
-        image = null;
-        return true;
-    }
-
-    public synchronized boolean unloadThumbnail() {
-        if (thumbnail == null) return false;
-
-        thumbnail = null;
-        return true;
-    }
-
-    public synchronized boolean unloadAll() {
-        return unloadImage() || unloadThumbnail();
-    }
-
     //-------------- Checkers ------------------------------------------------------------------------------------------
-
-    public synchronized boolean isImageLoaded() {
-        return image != null;
-    }
-
-    public synchronized boolean isThumbnailLoaded() {
-        return thumbnail != null;
-    }
 
     public synchronized boolean isChanged() {
         return pathChanged || sourceChanged || ratingChanged;
@@ -106,18 +80,18 @@ public class DBImageInfo {
     //--------------- Getters ------------------------------------------------------------------------------------------
 
     public synchronized Image getThumbnail(boolean backgroundLoading) {
-        if (thumbnail == null)
-            thumbnail = new Image("file:" + path, THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, backgroundLoading);
+        if (thumbnail == null || thumbnail.get() == null)
+            thumbnail = new WeakReference<>(new Image("file:" + path, THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, backgroundLoading));
 
-        return thumbnail;
+        return thumbnail.get();
     }
 
     public synchronized Image getImage(boolean backgroundLoading) {
-        if (image == null) {
-            image = new Image("file:" + path, backgroundLoading);
+        if (image == null || image.get() == null) {
+            image = new WeakReference<>(new Image("file:" + path, backgroundLoading));
         }
 
-        return image;
+        return image.get();
     }
 
     public synchronized ImageHistogram getHistogram() {

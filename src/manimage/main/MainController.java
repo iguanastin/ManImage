@@ -24,23 +24,18 @@ public class MainController {
 
     //TODO: Clean up C style handling
 
-    private DBImageInfo currentPreview;
     private File lastFolder;
 
 
     @FXML
     public void initialize() {
-//        grid.setImageSet(imageSet);
-
-        //TODO: Swap to using databases
+        grid.updateView();
     }
 
     void preview(DBImageInfo info) {
-        if (currentPreview != null) currentPreview.unloadImage();
-        currentPreview = info;
-
         previewDynamicImageView.setImage(info.getImage(true));
 //        previewTagsLabel.setText(info.getTags().toString());
+        //TODO: Fix tag label
     }
 
     public void addFilesClicked(ActionEvent event) {
@@ -102,7 +97,7 @@ public class MainController {
         if (folder == null) {
             //Canceled
         } else {
-//            imageSet.initAndAddSubfiles(folder, true);
+            //TODO: Implement
 
             lastFolder = folder.getParentFile();
         }

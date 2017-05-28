@@ -239,7 +239,7 @@ public class DynamicImageGridPane extends GridPane {
         }
     }
 
-    private void updateView() {
+    public void updateView() {
         try {
             String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy;
             if (descending) query += " DESC";
