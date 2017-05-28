@@ -51,6 +51,9 @@ public class ImageDatabase {
     private final Connection connection;
     private final Statement statement;
 
+    private int nextImageID;
+    private int nextComicID;
+
 
     public ImageDatabase(String path, String username, String password, boolean forceClean) throws SQLException {
         connection = DriverManager.getConnection("jdbc:h2:" + path, username, password);
@@ -64,6 +67,27 @@ public class ImageDatabase {
             } catch (SQLException ex) {
                 cleanAndInitialize();
             }
+        }
+
+        nextImageID = getHighestImageID() + 1;
+        nextComicID = getHighestComicID() + 1;
+    }
+
+    private int getHighestImageID() {
+        try {
+            ResultSet rs = statement.executeQuery("SELECT TOP 1 * " + SQL_IMAGE_ID + " FROM " + SQL_IMAGES_TABLE + " ORDER BY " + SQL_IMAGE_ID + " DESC");
+            return rs.getInt(SQL_IMAGE_ID);
+        } catch (SQLException ex) {
+            return 0;
+        }
+    }
+
+    private int getHighestComicID() {
+        try {
+            ResultSet rs = statement.executeQuery("SELECT TOP 1 * " + SQL_COMIC_ID + " FROM " + SQL_COMICS_TABLE + " ORDER BY " + SQL_COMIC_ID + " DESC");
+            return rs.getInt(SQL_COMIC_ID);
+        } catch (SQLException ex) {
+            return 0;
         }
     }
 
@@ -135,74 +159,67 @@ public class ImageDatabase {
         return null;
     }
 
-    public DBImageInfo createImage(String path) throws SQLException {
+    public synchronized DBImageInfo[] queueCreateImages(String... paths) {
         //TODO: Mark new images with 'tagme' tag
 
-        statement.executeUpdate("INSERT INTO " + SQL_IMAGES_TABLE + " (" + SQL_IMAGE_PATH + ", " + SQL_IMAGE_TIME_ADDED + ") VALUES ('" + path + "'," + System.currentTimeMillis() + ")");
+        final DBImageInfo[] results = new DBImageInfo[paths.length];
 
-        //Get created image info from database
-        ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_IMAGES_TABLE + " WHERE " + SQL_IMAGE_PATH + "='" + path + "'");
-        if (rs.next()) {
-            DBImageInfo info = new DBImageInfo(rs.getInt(SQL_IMAGE_ID), rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
-            imageInfos.add(info);
-            return info;
-        } else {
-            return null;
+        for (int i = 0; i < paths.length; i++) {
+            DBImageInfo image = new DBImageInfo(nextImageID, paths[i]);
+            nextImageID++;
+            imageInfos.add(image);
+            results[i] = image;
         }
+
+        return results;
     }
 
-    public DBComicInfo createComic(String name) throws SQLException {
+    public synchronized DBImageInfo queueCreateImage(String path) {
+        return queueCreateImages(path)[0];
+    }
+
+    public synchronized DBComicInfo[] queueCreateComics(String... names) {
         //TODO: Mark new comics with 'tagme' tag
 
-        statement.executeUpdate("INSERT INTO " + SQL_COMICS_TABLE + " (" + SQL_COMIC_NAME + "," + SQL_COMIC_TIME_ADDED + ") VALUES ('" + name + "'," + System.currentTimeMillis() + ")");
+        final DBComicInfo[] results = new DBComicInfo[names.length];
 
-        //Get created comic info from database
-        ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_COMICS_TABLE + " WHERE " + SQL_COMIC_NAME + "='" + name + "'");
-        if (rs.next()) {
-            DBComicInfo info = new DBComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
-            comicInfos.add(info);
-            return info;
-        } else {
-            return null;
+        for (int i = 0; i < names.length; i++) {
+            DBComicInfo comic = new DBComicInfo(nextComicID, names[i]);
+            nextComicID++;
+            comicInfos.add(comic);
+            results[i] = comic;
+        }
+
+        return results;
+    }
+
+    public synchronized DBComicInfo queueCreateComic(String name) {
+        return queueCreateComics(name)[0];
+    }
+
+    public synchronized void queueDeleteImages(DBImageInfo... images) {
+        for (DBImageInfo image : images) {
+            image.setToBeDeleted(true);
         }
     }
 
-    public int deleteImages(DBImageInfo... infos) throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(SQL_IMAGE_ID).append('=').append(infos[0].getId());
-        for (int i = 1; i < infos.length; i++) {
-            sb.append(" OR ").append(SQL_IMAGE_ID).append('=').append(infos[i].getId());
+    public synchronized void queueDeleteComics(DBComicInfo... comics) {
+        for (DBComicInfo comic : comics) {
+            comic.setToBeDeleted(true);
         }
-
-        //TODO: Test
-
-        imageInfos.removeAll(Arrays.asList(infos));
-        return statement.executeUpdate("DELETE FROM " + SQL_IMAGES_TABLE + " WHERE " + sb);
     }
 
-    public int deleteComics(DBComicInfo... infos) throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(SQL_COMIC_ID).append('=').append(infos[0].getId());
-        for (int i = 1; i < infos.length; i++) {
-            sb.append(" OR ").append(SQL_COMIC_ID).append('=').append(infos[i].getId());
-        }
-
-        //TODO: Test
-
-        comicInfos.removeAll(Arrays.asList(infos));
-        return statement.executeUpdate("DELETE FROM " + SQL_COMICS_TABLE + " WHERE " + sb);
-    }
-
-    public void clearCachedImages() {
+    public synchronized void clearCachedImages() {
         imageInfos.clear();
     }
 
-    public void clearCachedComics() {
+    public synchronized void clearCachedComics() {
         comicInfos.clear();
     }
 
     /**
      * Tests the basic architecture of the database
+     *
      * @throws SQLException When basic architecture is unexpected
      */
     public void test() throws SQLException {
@@ -226,60 +243,138 @@ public class ImageDatabase {
     }
 
     public int commitChanges() throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        for (DBImageInfo info : imageInfos) {
-            if (info.isChanged()) {
-                boolean commaNeeded = false;
+        StringBuilder queryBuilder = new StringBuilder();
 
-                sb.append("UPDATE ").append(SQL_IMAGES_TABLE).append(" SET ");
-
-                if (info.isPathChanged()) {
-                    sb.append(SQL_IMAGE_PATH).append("='").append(info.getPath()).append('\'');
-                    commaNeeded = true;
+        for (DBImageInfo image : imageInfos) {
+            if (image.isToBeDeleted()) {
+                if (image.isInserted()) {
+                    buildImageDeleteQuery(queryBuilder, image);
+                    image.setInserted(false);
+                } else {
+                    imageInfos.remove(image);
                 }
-                if (info.isSourceChanged()) {
-                    if (commaNeeded) sb.append(',');
-                    sb.append(SQL_IMAGE_SOURCE).append("='").append(info.getSource()).append('\'');
-                    commaNeeded = true;
-                }
-                if (info.isRatingChanged()) {
-                    if (commaNeeded) sb.append(',');
-                    sb.append(SQL_IMAGE_RATING).append('=').append(info.getRating());
-                }
-
-                info.markChangeCommitted();
-
-                sb.append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(info.getId()).append(";\n");
+            } else if (image.isToBeInserted() && !image.isInserted()) {
+                buildImageInsertQuery(queryBuilder, image);
+                image.setInserted(true);
+            } else if (image.isChanged() && image.isInserted()) {
+                buildImageUpdateQuery(queryBuilder, image);
             }
+
+            image.setAsUpdated();
         }
-        for (DBComicInfo info : comicInfos) {
-            if (info.isChanged()) {
-                boolean commaNeeded = false;
-
-                sb.append("UPDATE ").append(SQL_COMICS_TABLE).append(" SET ");
-
-                if (info.isNameChanged()) {
-                    sb.append(SQL_COMIC_NAME).append("='").append(info.getName()).append('\'');
-                    commaNeeded = true;
+        for (DBComicInfo comic : comicInfos) {
+            if (comic.isToBeDeleted()) {
+                if (comic.isInserted()) {
+                    buildComicDeleteQuery(queryBuilder, comic);
+                    comic.setInserted(false);
+                } else {
+                    comicInfos.remove(comic);
                 }
-                if (info.isSourceChanged()) {
-                    if (commaNeeded) sb.append(',');
-                    sb.append(SQL_COMIC_SOURCE).append("='").append(info.getSource()).append('\'');
-                }
-
-                info.markChangesCommitted();
-
-                sb.append(" WHERE ").append(SQL_COMIC_ID).append('=').append(info.getId()).append(";\n");
+            } else if (comic.isToBeInserted()) {
+                buildComicInsertQuery(queryBuilder, comic);
+                comic.setInserted(true);
+            } else if (comic.isChanged()) {
+                buildComicUpdateQuery(queryBuilder, comic);
             }
+
+            comic.setAsUpdated();
         }
 
-        //TODO: Test
-
-        final int result = statement.executeUpdate(sb.toString());
-
+        final int result = statement.executeUpdate(queryBuilder.toString());
         if (result > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
-
         return result;
+    }
+
+    private void buildImageDeleteQuery(StringBuilder sb, DBImageInfo image) {
+        sb.append("DELETE FROM ").append(SQL_IMAGES_TABLE).append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
+    }
+
+    private void buildComicDeleteQuery(StringBuilder sb, DBComicInfo comic) {
+        sb.append("DELETE FROM ").append(SQL_COMICS_TABLE).append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
+    }
+
+    private void buildComicUpdateQuery(StringBuilder sb, DBComicInfo comic) {
+        boolean commaNeeded = false;
+
+        sb.append("UPDATE ").append(SQL_COMICS_TABLE).append(" SET ");
+
+        if (comic.isNameChanged()) {
+            sb.append(SQL_COMIC_NAME).append("='").append(comic.getName()).append('\'');
+            commaNeeded = true;
+        }
+        if (comic.isSourceChanged()) {
+            if (commaNeeded) sb.append(',');
+            sb.append(SQL_COMIC_SOURCE).append("=");
+            if (comic.getSource() == null) {
+                sb.append("NULL");
+            } else {
+                sb.append('\'').append(comic.getSource()).append('\'');
+            }
+        }
+
+        sb.append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
+    }
+
+    private void buildImageUpdateQuery(StringBuilder sb, DBImageInfo image) {
+        boolean commaNeeded = false;
+
+        sb.append("UPDATE ").append(SQL_IMAGES_TABLE).append(" SET ");
+
+        if (image.isPathChanged()) {
+            sb.append(SQL_IMAGE_PATH).append("=");
+            if (image.getPath() == null) {
+                sb.append("NULL");
+            } else {
+                sb.append('\'').append(image.getPath()).append('\'');
+            }
+            commaNeeded = true;
+        }
+        if (image.isSourceChanged()) {
+            if (commaNeeded) sb.append(',');
+            sb.append(SQL_IMAGE_SOURCE).append("=");
+            if (image.getSource() == null) {
+                sb.append("NULL");
+            } else {
+                sb.append('\'').append(image.getSource()).append('\'');
+            }
+            commaNeeded = true;
+        }
+        if (image.isRatingChanged()) {
+            if (commaNeeded) sb.append(',');
+            sb.append(SQL_IMAGE_RATING).append('=').append(image.getRating());
+        }
+
+        sb.append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
+    }
+
+    private void buildImageInsertQuery(StringBuilder sb, DBImageInfo image) {
+        sb.append("INSERT INTO ").append(SQL_IMAGES_TABLE).append(" VALUES (").append(image.getId()).append(',');
+
+        if (image.getPath() == null) {
+            sb.append("NULL,");
+        } else {
+            sb.append('\'').append(image.getPath()).append("',");
+        }
+
+        if (image.getSource() == null) {
+            sb.append("NULL,");
+        } else {
+            sb.append('\'').append(image.getSource()).append("',");
+        }
+
+        sb.append(image.getRating()).append(",").append(image.getTimeAdded()).append(");\n");
+    }
+
+    private void buildComicInsertQuery(StringBuilder sb, DBComicInfo comic) {
+        sb.append("INSERT INTO ").append(SQL_COMICS_TABLE).append(" VALUES (").append(comic.getId()).append(",'").append(comic.getName()).append("',");
+
+        if (comic.getSource() == null) {
+            sb.append("NULL,");
+        } else {
+            sb.append('\'').append(comic.getSource()).append("',");
+        }
+
+        sb.append(comic.getTimeAdded()).append(");\n");
     }
 
     public void addChangeListener(ImageDatabaseUpdateListener listener) {

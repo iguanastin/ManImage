@@ -8,10 +8,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import manimage.common.DBImageInfo;
+import manimage.common.ImageDatabase;
 import manimage.common.ImageInfo;
 import manimage.common.ImageSet;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 
 public class MainController {
@@ -48,10 +50,18 @@ public class MainController {
         fc.setInitialDirectory(lastFolder);
         List<File> files = fc.showOpenMultipleDialog(Main.mainStage);
 
-        if (files == null || files.isEmpty()) {
-            //Canceled
-        } else {
-//            imageSet.initAndAddAll(files);
+        if (files != null) {
+            ImageDatabase db = grid.getImageDatabase();
+
+            try {
+                files.forEach(file -> {
+                    if (Main.IMAGE_FILTER.accept(file)) db.queueCreateImage(file.getAbsolutePath());
+                });
+
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
 
             lastFolder = files.get(0).getParentFile();
         }
@@ -63,12 +73,23 @@ public class MainController {
         dc.setInitialDirectory(lastFolder);
         File folder = dc.showDialog(Main.mainStage);
 
-        if (folder == null) {
-            //Canceled
-        } else {
-//            imageSet.initAndAddSubfiles(folder, false);
+        if (folder != null) {
+            File[] imageFiles = folder.listFiles(Main.IMAGE_FILTER);
+            if (imageFiles != null) {
+                ImageDatabase db = grid.getImageDatabase();
 
-            lastFolder = folder.getParentFile();
+                try {
+                    for (File imageFile : imageFiles) {
+                        db.queueCreateImage(imageFile.getAbsolutePath());
+                    }
+
+                    db.commitChanges();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+
+                lastFolder = folder.getParentFile();
+            }
         }
     }
 

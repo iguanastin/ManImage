@@ -35,20 +35,17 @@ class ImageDatabaseTest {
     }
 
     @Test
-    void getImages() {
+    void getCachedImages() {
         try {
-            DBImageInfo i1 = db.createImage("image1");
-            DBImageInfo i2 = db.createImage("image2");
-            DBImageInfo i3 = db.createImage("image3");
-            DBImageInfo i4 = db.createImage("image4");
-            DBImageInfo i5 = db.createImage("image5");
-            ArrayList<DBImageInfo> infos = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + ImageDatabase.SQL_IMAGE_ID + " DESC OFFSET 0 LIMIT 5");
-            Assertions.assertEquals(5, infos.size());
-            Assertions.assertEquals(i5, infos.get(0));
-            Assertions.assertEquals(i4, infos.get(1));
-            Assertions.assertEquals(i3, infos.get(2));
-            Assertions.assertEquals(i2, infos.get(3));
-            Assertions.assertEquals(i1, infos.get(4));
+            DBImageInfo[] created = db.queueCreateImages("image1", "image2", "image3", "image4", "image5");
+            db.commitChanges();
+            ArrayList<DBImageInfo> retrieved = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + ImageDatabase.SQL_IMAGE_ID + " OFFSET 0 LIMIT 5");
+            Assertions.assertEquals(5, retrieved.size());
+            Assertions.assertEquals(created[0], retrieved.get(0));
+            Assertions.assertEquals(created[1], retrieved.get(1));
+            Assertions.assertEquals(created[2], retrieved.get(2));
+            Assertions.assertEquals(created[3], retrieved.get(3));
+            Assertions.assertEquals(created[4], retrieved.get(4));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -57,13 +54,14 @@ class ImageDatabaseTest {
     @Test
     void getImagesUncached() {
         try {
-            DBImageInfo c = db.createImage("image");
+            DBImageInfo created = db.queueCreateImage("image");
+            db.commitChanges();
             db.clearCachedImages();
             ArrayList<DBImageInfo> images = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE);
-            Assertions.assertEquals(c.getId(), images.get(0).getId());
-            Assertions.assertEquals(c.getPath(), images.get(0).getPath());
-            Assertions.assertEquals(c.getSource(), images.get(0).getSource());
-            Assertions.assertEquals(c.getTimeAdded(), images.get(0).getTimeAdded());
+            Assertions.assertEquals(created.getId(), images.get(0).getId());
+            Assertions.assertEquals(created.getPath(), images.get(0).getPath());
+            Assertions.assertEquals(created.getSource(), images.get(0).getSource());
+            Assertions.assertEquals(created.getTimeAdded(), images.get(0).getTimeAdded());
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -72,18 +70,15 @@ class ImageDatabaseTest {
     @Test
     void getComics() {
         try {
-            DBComicInfo c1 = db.createComic("comic1");
-            DBComicInfo c2 = db.createComic("comic2");
-            DBComicInfo c3 = db.createComic("comic3");
-            DBComicInfo c4 = db.createComic("comic4");
-            DBComicInfo c5 = db.createComic("comic5");
-            ArrayList<DBComicInfo> infos = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE + " ORDER BY " + ImageDatabase.SQL_COMIC_ID + " DESC OFFSET 0 LIMIT 5");
+            DBComicInfo[] created = db.queueCreateComics("comic1", "comic2", "comic3", "comic4", "comic5");
+            db.commitChanges();
+            ArrayList<DBComicInfo> infos = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE + " ORDER BY " + ImageDatabase.SQL_COMIC_ID + " OFFSET 0 LIMIT 5");
             Assertions.assertEquals(5, infos.size());
-            Assertions.assertEquals(c5, infos.get(0));
-            Assertions.assertEquals(c4, infos.get(1));
-            Assertions.assertEquals(c3, infos.get(2));
-            Assertions.assertEquals(c2, infos.get(3));
-            Assertions.assertEquals(c1, infos.get(4));
+            Assertions.assertEquals(created[0], infos.get(0));
+            Assertions.assertEquals(created[1], infos.get(1));
+            Assertions.assertEquals(created[2], infos.get(2));
+            Assertions.assertEquals(created[3], infos.get(3));
+            Assertions.assertEquals(created[4], infos.get(4));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -92,13 +87,14 @@ class ImageDatabaseTest {
     @Test
     void getComicsUncached() {
         try {
-            DBComicInfo c = db.createComic("comic1");
+            DBComicInfo created = db.queueCreateComic("comic");
+            db.commitChanges();
             db.clearCachedComics();
             ArrayList<DBComicInfo> comics = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE);
-            Assertions.assertEquals(c.getId(), comics.get(0).getId());
-            Assertions.assertEquals(c.getName(), comics.get(0).getName());
-            Assertions.assertEquals(c.getSource(), comics.get(0).getSource());
-            Assertions.assertEquals(c.getTimeAdded(), comics.get(0).getTimeAdded());
+            Assertions.assertEquals(created.getId(), comics.get(0).getId());
+            Assertions.assertEquals(created.getName(), comics.get(0).getName());
+            Assertions.assertEquals(created.getSource(), comics.get(0).getSource());
+            Assertions.assertEquals(created.getTimeAdded(), comics.get(0).getTimeAdded());
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -107,9 +103,13 @@ class ImageDatabaseTest {
     @Test
     void createImage() {
         try {
-            DBImageInfo info = db.createImage("image");
-            ArrayList<DBImageInfo> infos = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " WHERE " + ImageDatabase.SQL_IMAGE_ID + "=" + info.getId());
-            Assertions.assertEquals(info, infos.get(0));
+            DBImageInfo created = db.queueCreateImage("image");
+            Assertions.assertFalse(created.isInserted());
+            Assertions.assertTrue(created.isToBeInserted());
+            db.commitChanges();
+            Assertions.assertTrue(created.isInserted());
+            ArrayList<DBImageInfo> images = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " WHERE " + ImageDatabase.SQL_IMAGE_ID + "=" + created.getId());
+            Assertions.assertEquals(created, images.get(0));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -118,9 +118,13 @@ class ImageDatabaseTest {
     @Test
     void createComic() {
         try {
-            DBComicInfo info = db.createComic("comic");
-            ArrayList<DBComicInfo> infos = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE + " WHERE " + ImageDatabase.SQL_COMIC_ID + "=" + info.getId());
-            Assertions.assertEquals(info, infos.get(0));
+            DBComicInfo created = db.queueCreateComic("comic");
+            Assertions.assertFalse(created.isInserted());
+            Assertions.assertTrue(created.isToBeInserted());
+            db.commitChanges();
+            Assertions.assertTrue(created.isInserted());
+            ArrayList<DBComicInfo> comics = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE + " WHERE " + ImageDatabase.SQL_COMIC_ID + "=" + created.getId());
+            Assertions.assertEquals(created, comics.get(0));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -129,16 +133,26 @@ class ImageDatabaseTest {
     @Test
     void deleteImages() {
         try {
-            DBImageInfo i1 = db.createImage("image1");
-            DBImageInfo i2 = db.createImage("image2");
-            DBImageInfo i3 = db.createImage("image3");
-            DBImageInfo i4 = db.createImage("image4");
-            DBImageInfo i5 = db.createImage("image5");
-            Assertions.assertEquals(3, db.deleteImages(i1, i2, i3));
+            DBImageInfo[] created = db.queueCreateImages("image1", "image2", "image3", "image4", "image5");
+            db.commitChanges();
+            db.queueDeleteImages(created[0], created[1], created[2]);
+            Assertions.assertTrue(created[0].isToBeDeleted());
+            Assertions.assertTrue(created[1].isToBeDeleted());
+            Assertions.assertTrue(created[2].isToBeDeleted());
+            Assertions.assertFalse(created[3].isToBeDeleted());
+            Assertions.assertFalse(created[4].isToBeDeleted());
+
+            db.commitChanges();
+            Assertions.assertFalse(created[0].isInserted());
+            Assertions.assertFalse(created[1].isInserted());
+            Assertions.assertFalse(created[2].isInserted());
+            Assertions.assertTrue(created[3].isInserted());
+            Assertions.assertTrue(created[4].isInserted());
+
             ArrayList<DBImageInfo> infos = db.getImages("SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + ImageDatabase.SQL_IMAGE_ID);
             Assertions.assertEquals(2, infos.size());
-            Assertions.assertEquals(i4, infos.get(0));
-            Assertions.assertEquals(i5, infos.get(1));
+            Assertions.assertEquals(created[3], infos.get(0));
+            Assertions.assertEquals(created[4], infos.get(1));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -147,16 +161,26 @@ class ImageDatabaseTest {
     @Test
     void deleteComics() {
         try {
-            DBComicInfo c1 = db.createComic("comic1");
-            DBComicInfo c2 = db.createComic("comic2");
-            DBComicInfo c3 = db.createComic("comic3");
-            DBComicInfo c4 = db.createComic("comic4");
-            DBComicInfo c5 = db.createComic("comic5");
-            Assertions.assertEquals(3, db.deleteComics(c1, c2, c3));
+            DBComicInfo[] created = db.queueCreateComics("c1", "c2", "c3", "c4", "c5");
+            db.commitChanges();
+            db.queueDeleteComics(created[0], created[1], created[2]);
+            Assertions.assertTrue(created[0].isToBeDeleted());
+            Assertions.assertTrue(created[1].isToBeDeleted());
+            Assertions.assertTrue(created[2].isToBeDeleted());
+            Assertions.assertFalse(created[3].isToBeDeleted());
+            Assertions.assertFalse(created[4].isToBeDeleted());
+
+            db.commitChanges();
+            Assertions.assertFalse(created[0].isInserted());
+            Assertions.assertFalse(created[1].isInserted());
+            Assertions.assertFalse(created[2].isInserted());
+            Assertions.assertTrue(created[3].isInserted());
+            Assertions.assertTrue(created[4].isInserted());
+
             ArrayList<DBComicInfo> infos = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE + " ORDER BY " + ImageDatabase.SQL_COMIC_ID);
             Assertions.assertEquals(2, infos.size());
-            Assertions.assertEquals(c4, infos.get(0));
-            Assertions.assertEquals(c5, infos.get(1));
+            Assertions.assertEquals(created[3], infos.get(0));
+            Assertions.assertEquals(created[4], infos.get(1));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }
@@ -167,8 +191,9 @@ class ImageDatabaseTest {
         try {
             final String imagePath = "image";
             final String comicName = "comic";
-            DBImageInfo i = db.createImage(imagePath);
-            DBComicInfo c = db.createComic(comicName);
+            DBImageInfo i = db.queueCreateImage(imagePath);
+            DBComicInfo c = db.queueCreateComic(comicName);
+            db.commitChanges();
             i.setPath("changed image");
             c.setName("changed comic");
             db.clearCachedImages();
@@ -187,8 +212,9 @@ class ImageDatabaseTest {
         try {
             final String newPath = "new path";
             final String newName = "new name";
-            DBImageInfo i = db.createImage("image");
-            DBComicInfo c = db.createComic("comic");
+            DBImageInfo i = db.queueCreateImage("image");
+            DBComicInfo c = db.queueCreateComic("comic");
+            db.commitChanges();
             i.setPath(newPath);
             c.setName(newName);
             db.commitChanges();

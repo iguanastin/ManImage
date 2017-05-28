@@ -185,6 +185,10 @@ public class DynamicImageGridPane extends GridPane {
         return result;
     }
 
+    public ImageDatabase getImageDatabase() {
+        return db;
+    }
+
     //------------------ Modifiers -------------------------------------------------------------------------------------
 
     private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
@@ -239,8 +243,9 @@ public class DynamicImageGridPane extends GridPane {
 
     private void updateView() {
         try {
-            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy + " OFFSET " + pageLength*pageNum + " LIMIT " + pageLength;
-            if (descending) query += "DESC";
+            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy;
+            if (descending) query += " DESC";
+            query += " OFFSET " + pageLength*pageNum + " LIMIT " + pageLength;
             ArrayList<DBImageInfo> infos = db.getImages(query);
 
             int i = 0;

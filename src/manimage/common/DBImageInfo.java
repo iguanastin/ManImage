@@ -16,6 +16,9 @@ public class DBImageInfo {
     private final long timeAdded;
 
     private boolean pathChanged = false, sourceChanged = false, ratingChanged = false;
+    private boolean inserted = false;
+    private boolean toBeInserted = false;
+    private boolean toBeDeleted = false;
 
     private static final int THUMBNAIL_SIZE = 140;
 
@@ -26,6 +29,20 @@ public class DBImageInfo {
         this.source = source;
         this.rating = rating;
         this.timeAdded = timeAdded;
+        inserted = true;
+        toBeDeleted = false;
+        toBeInserted = false;
+    }
+
+    public DBImageInfo(int id, String path) {
+        this.id = id;
+        this.path = path;
+        this.source = null;
+        this.rating = 0;
+        this.timeAdded = System.currentTimeMillis();
+        inserted = false;
+        toBeDeleted = false;
+        toBeInserted = true;
     }
 
     //------------------- Operators ------------------------------------------------------------------------------------
@@ -72,6 +89,18 @@ public class DBImageInfo {
 
     public synchronized boolean isSourceChanged() {
         return sourceChanged;
+    }
+
+    public boolean isInserted() {
+        return inserted;
+    }
+
+    public boolean isToBeDeleted() {
+        return toBeDeleted;
+    }
+
+    public boolean isToBeInserted() {
+        return toBeInserted;
     }
 
     //--------------- Getters ------------------------------------------------------------------------------------------
@@ -122,8 +151,8 @@ public class DBImageInfo {
 
     //------------- Setters --------------------------------------------------------------------------------------------
 
-    public synchronized void markChangeCommitted() {
-        pathChanged = sourceChanged = ratingChanged = false;
+    public synchronized void setAsUpdated() {
+        pathChanged = sourceChanged = ratingChanged = toBeDeleted = toBeInserted = false;
     }
 
     public synchronized void setSource(String source) {
@@ -139,6 +168,18 @@ public class DBImageInfo {
     public synchronized void setPath(String path) {
         if (!this.path.equals(path)) pathChanged = true;
         this.path = path;
+    }
+
+    public void setInserted(boolean b) {
+        inserted = b;
+    }
+
+    public void setToBeDeleted(boolean toBeDeleted) {
+        this.toBeDeleted = toBeDeleted;
+    }
+
+    public void setToBeInserted(boolean toBeInserted) {
+        this.toBeInserted = toBeInserted;
     }
 
 }

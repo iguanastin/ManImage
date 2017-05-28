@@ -8,6 +8,9 @@ public class DBComicInfo {
     private String source;
 
     private boolean nameChanged = false, sourceChanged = false;
+    private boolean inserted = false;
+    private boolean toBeInserted = false;
+    private boolean toBeDeleted = false;
 
 
     public DBComicInfo(int id, String name, String source, long timeAdded) {
@@ -15,6 +18,19 @@ public class DBComicInfo {
         this.name = name;
         this.source = source;
         this.timeAdded = timeAdded;
+        inserted = true;
+        toBeInserted = false;
+        toBeDeleted = false;
+    }
+
+    public DBComicInfo(int id, String name) {
+        this.id = id;
+        this.name = name;
+        this.source = null;
+        this.timeAdded = System.currentTimeMillis();
+        inserted = false;
+        toBeInserted = true;
+        toBeDeleted = false;
     }
 
     //--------------- Getters ------------------------------------------------------------------------------------------
@@ -49,6 +65,18 @@ public class DBComicInfo {
         return sourceChanged;
     }
 
+    public boolean isInserted() {
+        return inserted;
+    }
+
+    public boolean isToBeInserted() {
+        return toBeInserted;
+    }
+
+    public boolean isToBeDeleted() {
+        return toBeDeleted;
+    }
+
     //---------------------- Setters -----------------------------------------------------------------------------------
 
     public void setSource(String source) {
@@ -61,8 +89,20 @@ public class DBComicInfo {
         this.name = name;
     }
 
-    public void markChangesCommitted() {
-        nameChanged = sourceChanged = false;
+    public void setAsUpdated() {
+        nameChanged = sourceChanged = toBeDeleted = toBeInserted = false;
+    }
+
+    public void setInserted(boolean b) {
+        inserted = b;
+    }
+
+    public void setToBeInserted(boolean toBeInserted) {
+        this.toBeInserted = toBeInserted;
+    }
+
+    public void setToBeDeleted(boolean toBeDeleted) {
+        this.toBeDeleted = toBeDeleted;
     }
 
 }
