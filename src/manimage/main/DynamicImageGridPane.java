@@ -131,8 +131,6 @@ public class DynamicImageGridPane extends GridPane {
 
         db.addChangeListener(this::updateView);
 
-        updateView();
-
     }
 
     //------------------------ Getters ---------------------------------------------------------------------------------

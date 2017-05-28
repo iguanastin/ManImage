@@ -25,7 +25,7 @@ public class ImageDatabase {
     public static final String SQL_TAGS_TABLE = "tags";
     public static final String SQL_IMAGE_TAGGED_TABLE = "image_tagged";
     public static final String SQL_COMICS_TABLE = "comics";
-    public static final String SQL_COMICS_TAGGED_TABLE = "comics_tagged";
+    public static final String SQL_COMICS_TAGGED_TABLE = "comic_tagged";
     public static final String SQL_COMIC_PAGES_TABLE = "comic_pages";
 
     public static final String SQL_IMAGE_ID = "image_id";
@@ -75,8 +75,12 @@ public class ImageDatabase {
 
     private int getHighestImageID() {
         try {
-            ResultSet rs = statement.executeQuery("SELECT TOP 1 * " + SQL_IMAGE_ID + " FROM " + SQL_IMAGES_TABLE + " ORDER BY " + SQL_IMAGE_ID + " DESC");
-            return rs.getInt(SQL_IMAGE_ID);
+            ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + " FROM " + SQL_IMAGES_TABLE + " ORDER BY " + SQL_IMAGE_ID + " DESC");
+            if (rs.next()) {
+                return rs.getInt(SQL_IMAGE_ID);
+            } else {
+                return 0;
+            }
         } catch (SQLException ex) {
             return 0;
         }
@@ -84,8 +88,12 @@ public class ImageDatabase {
 
     private int getHighestComicID() {
         try {
-            ResultSet rs = statement.executeQuery("SELECT TOP 1 * " + SQL_COMIC_ID + " FROM " + SQL_COMICS_TABLE + " ORDER BY " + SQL_COMIC_ID + " DESC");
-            return rs.getInt(SQL_COMIC_ID);
+            ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + " FROM " + SQL_COMICS_TABLE + " ORDER BY " + SQL_COMIC_ID + " DESC");
+            if (rs.next()) {
+                return rs.getInt(SQL_COMIC_ID);
+            } else {
+                return 0;
+            }
         } catch (SQLException ex) {
             return 0;
         }
