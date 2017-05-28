@@ -4,7 +4,6 @@ package manimage.common;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public final class ImageHistogram {
@@ -95,8 +94,8 @@ public final class ImageHistogram {
         return getSimilarity(other) >= confidence;
     }
 
-    public static ArrayList<DBImageInfo> getDuplicates(ArrayList<DBImageInfo> infos, double confidence) {
-        ArrayList<DBImageInfo> results = new ArrayList<>();
+    public static ArrayList<ImageInfo> getDuplicates(ArrayList<ImageInfo> infos, double confidence) {
+        ArrayList<ImageInfo> results = new ArrayList<>();
 
         //TODO: Modify to return a pair with an associated similarity
 

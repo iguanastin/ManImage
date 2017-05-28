@@ -6,16 +6,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import manimage.common.DBImageInfo;
-import manimage.common.ImageDatabase;
-import manimage.common.ImageHistogram;
-import org.h2.jdbcx.JdbcDataSource;
 
-import java.io.File;
 import java.io.FileFilter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
 
 public class Main extends Application {
 

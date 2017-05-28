@@ -7,7 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import manimage.common.DBImageInfo;
+import manimage.common.ImageInfo;
 import manimage.common.ImageDatabase;
 
 import java.io.File;
@@ -30,7 +30,7 @@ public class MainController {
         grid.updateView();
     }
 
-    void preview(DBImageInfo info) {
+    void preview(ImageInfo info) {
         previewDynamicImageView.setImage(info.getImage(true));
 //        previewTagsLabel.setText(info.getTags().toString());
         //TODO: Fix tag label

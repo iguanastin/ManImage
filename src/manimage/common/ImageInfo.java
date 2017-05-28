@@ -1,11 +1,12 @@
 package manimage.common;
 
 
+import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 
 import java.lang.ref.WeakReference;
 
-public class DBImageInfo {
+public class ImageInfo {
 
     private WeakReference<Image> image;
     private WeakReference<Image> thumbnail;
@@ -25,7 +26,7 @@ public class DBImageInfo {
     public static final int THUMBNAIL_SIZE = 140;
 
 
-    public DBImageInfo(int id, String path, String source, byte rating, long timeAdded) {
+    public ImageInfo(int id, String path, String source, byte rating, long timeAdded) {
         this.id = id;
         this.path = path;
         this.source = source;
@@ -36,7 +37,7 @@ public class DBImageInfo {
         toBeInserted = false;
     }
 
-    public DBImageInfo(int id, String path) {
+    public ImageInfo(int id, String path) {
         this.id = id;
         this.path = path;
         this.source = null;
@@ -130,7 +131,9 @@ public class DBImageInfo {
     }
 
     public synchronized void setSource(String source) {
-        if (!this.source.equals(source)) sourceChanged = true;
+        if (this.source == null && source != null) sourceChanged = true;
+        else if (this.source != null && !this.source.equals(source)) sourceChanged = true;
+
         this.source = source;
     }
 
@@ -139,6 +142,7 @@ public class DBImageInfo {
         this.rating = rating;
     }
 
+    @NotNull
     public synchronized void setPath(String path) {
         if (!this.path.equals(path)) pathChanged = true;
         this.path = path;

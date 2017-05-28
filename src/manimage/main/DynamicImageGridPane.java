@@ -11,7 +11,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import manimage.common.DBImageInfo;
+import manimage.common.ImageInfo;
 import manimage.common.ImageDatabase;
 
 import java.awt.*;
@@ -24,9 +24,9 @@ import java.util.List;
 
 public class DynamicImageGridPane extends GridPane {
 
-    private final List<GridImageView> imageViews = new ArrayList<>();
+    private final ArrayList<GridImageView> imageViews = new ArrayList<>();
     //TODO: Centralize this array instead of getChildren()
-    private final List<GridImageView> selected = new ArrayList<>();
+    private final ArrayList<GridImageView> selected = new ArrayList<>();
 
     private final ContextMenu contextMenu;
 
@@ -60,7 +60,7 @@ public class DynamicImageGridPane extends GridPane {
         //TODO: Implement info viewing
 
         items[2] = new Menu("Set Rating...");
-        ((Menu)items[2]).getItems().addAll(new MenuItem("★"), new MenuItem("★★"), new MenuItem("★★★"), new MenuItem("★★★★"), new MenuItem("★★★★★"));
+        ((Menu) items[2]).getItems().addAll(new MenuItem("★"), new MenuItem("★★"), new MenuItem("★★★"), new MenuItem("★★★★"), new MenuItem("★★★★★"));
         //TODO: Implement rating edit
 
         items[3] = new SeparatorMenuItem();
@@ -89,10 +89,9 @@ public class DynamicImageGridPane extends GridPane {
 
         items[6] = new SeparatorMenuItem();
 
-        items[7] = new MenuItem("Delete");
+        items[7] = new MenuItem("Remove");
         items[7].setOnAction(event -> {
-            //TODO: Remove from database
-            //TODO: Actual delete/move to recycle bin
+            deleteSelected();
         });
 
         contextMenu = new ContextMenu(items);
@@ -119,7 +118,7 @@ public class DynamicImageGridPane extends GridPane {
             }
 
             //TODO: Figure out where keyevents actually happen
-        });
+        }); //TODO: Event is never fired
 
         //----------------- Setup database -----------------------------------------------------------------------------
 
@@ -187,9 +186,9 @@ public class DynamicImageGridPane extends GridPane {
         return db;
     }
 
-    //------------------ Modifiers -------------------------------------------------------------------------------------
+    //------------------ Operators -------------------------------------------------------------------------------------
 
-    private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
+    public void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
             selected.clear();
         } else if (shiftDown && !selected.isEmpty()) {
@@ -218,6 +217,20 @@ public class DynamicImageGridPane extends GridPane {
         updateSelected();
     }
 
+    private void deleteSelected() {
+        if (!selected.isEmpty()) {
+            ImageInfo[] images = new ImageInfo[selected.size()];
+            for (int i = 0; i < images.length; i++) images[i] = selected.get(i).getInfo();
+            db.queueDeleteImages(images);
+            try {
+                clearSelected();
+                System.out.println(db.commitChanges());
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
     //------------------------ Updaters --------------------------------------------------------------------------------
 
     private void updateSelected() {
@@ -243,18 +256,13 @@ public class DynamicImageGridPane extends GridPane {
         try {
             String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy;
             if (descending) query += " DESC";
-            query += " OFFSET " + pageLength*pageNum + " LIMIT " + pageLength;
-            ArrayList<DBImageInfo> infos = db.getImages(query);
+            query += " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
+            ArrayList<ImageInfo> images = db.getImages(query);
 
             int i = 0;
-            for (DBImageInfo info : infos) {
-                if (i < imageViews.size()) {
-                    //Re-use old imageview
-                    imageViews.get(i).setInfo(info);
-                    imageViews.get(i).loadThumbnail(true);
-                } else {
-                    //Create new imageview
-                    GridImageView view = new GridImageView(info);
+            for (ImageInfo image : images) {
+                if (i >= imageViews.size()) {
+                    GridImageView view = new GridImageView(image);
                     view.loadThumbnail(true);
                     view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
                     view.setOnMouseClicked(event -> {
@@ -263,16 +271,23 @@ public class DynamicImageGridPane extends GridPane {
                     imageViews.add(view);
 
                     //Add new row if not enough present
-                    if (getRowConstraints().size() <= i/columnWidth()) getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
+                    if (getRowConstraints().size() <= i / columnWidth())
+                        getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
 
-                    add(view, i%columnWidth(), i/columnWidth());
+                    add(view, i % columnWidth(), i / columnWidth());
+                } else {
+                    GridImageView view = imageViews.get(i);
+
+                    view.setInfo(image);
+                    view.loadThumbnail(true);
                 }
 
                 i++;
             }
 
-            for (int k = imageViews.size()-i; k > 0; k--) {
-                imageViews.remove(imageViews.size()-1);
+            for (int k = i; k < imageViews.size(); k++) {
+                GridImageView view = imageViews.remove(imageViews.size()-1);
+                getChildren().remove(view);
             }
         } catch (SQLException ex) {
             ex.printStackTrace();

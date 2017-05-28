@@ -3,7 +3,6 @@ package manimage.common;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ImageDatabase {
 
@@ -46,8 +45,8 @@ public class ImageDatabase {
 
     private final ArrayList<ImageDatabaseUpdateListener> changeListeners = new ArrayList<>();
 
-    private final ArrayList<DBImageInfo> imageInfos = new ArrayList<>();
-    private final ArrayList<DBComicInfo> comicInfos = new ArrayList<>();
+    private final ArrayList<ImageInfo> imageInfos = new ArrayList<>();
+    private final ArrayList<ComicInfo> comicInfos = new ArrayList<>();
     private final Connection connection;
     private final Statement statement;
 
@@ -103,17 +102,17 @@ public class ImageDatabase {
         statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
     }
 
-    public ArrayList<DBImageInfo> getImages(String query) throws SQLException {
-        final ArrayList<DBImageInfo> results = new ArrayList<>();
+    public ArrayList<ImageInfo> getImages(String query) throws SQLException {
+        final ArrayList<ImageInfo> results = new ArrayList<>();
 
         ResultSet rs = statement.executeQuery(query);
 
         while (rs.next()) {
             final int id = rs.getInt(SQL_IMAGE_ID);
-            DBImageInfo info = getCachedImage(id);
+            ImageInfo info = getCachedImage(id);
 
             if (info == null) {
-                info = new DBImageInfo(id, rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
+                info = new ImageInfo(id, rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
             }
 
             results.add(info);
@@ -126,17 +125,17 @@ public class ImageDatabase {
         return results;
     }
 
-    public ArrayList<DBComicInfo> getComics(String query) throws SQLException {
-        final ArrayList<DBComicInfo> results = new ArrayList<>();
+    public ArrayList<ComicInfo> getComics(String query) throws SQLException {
+        final ArrayList<ComicInfo> results = new ArrayList<>();
 
         ResultSet rs = statement.executeQuery(query);
 
         while (rs.next()) {
             final int id = rs.getInt(SQL_COMIC_ID);
-            DBComicInfo info = getCachedComic(id);
+            ComicInfo info = getCachedComic(id);
 
             if (info == null) {
-                info = new DBComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
+                info = new ComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
             }
 
             results.add(info);
@@ -147,8 +146,8 @@ public class ImageDatabase {
         return results;
     }
 
-    private DBImageInfo getCachedImage(int id) {
-        for (DBImageInfo info : imageInfos) {
+    private ImageInfo getCachedImage(int id) {
+        for (ImageInfo info : imageInfos) {
             if (info.getId() == id) {
                 return info;
             }
@@ -157,8 +156,8 @@ public class ImageDatabase {
         return null;
     }
 
-    private DBComicInfo getCachedComic(int id) {
-        for (DBComicInfo info : comicInfos) {
+    private ComicInfo getCachedComic(int id) {
+        for (ComicInfo info : comicInfos) {
             if (info.getId() == id) {
                 return info;
             }
@@ -167,13 +166,13 @@ public class ImageDatabase {
         return null;
     }
 
-    public synchronized DBImageInfo[] queueCreateImages(String... paths) {
+    public synchronized ImageInfo[] queueCreateImages(String... paths) {
         //TODO: Mark new images with 'tagme' tag
 
-        final DBImageInfo[] results = new DBImageInfo[paths.length];
+        final ImageInfo[] results = new ImageInfo[paths.length];
 
         for (int i = 0; i < paths.length; i++) {
-            DBImageInfo image = new DBImageInfo(nextImageID, paths[i]);
+            ImageInfo image = new ImageInfo(nextImageID, paths[i]);
             nextImageID++;
             imageInfos.add(image);
             results[i] = image;
@@ -182,17 +181,17 @@ public class ImageDatabase {
         return results;
     }
 
-    public synchronized DBImageInfo queueCreateImage(String path) {
+    public synchronized ImageInfo queueCreateImage(String path) {
         return queueCreateImages(path)[0];
     }
 
-    public synchronized DBComicInfo[] queueCreateComics(String... names) {
+    public synchronized ComicInfo[] queueCreateComics(String... names) {
         //TODO: Mark new comics with 'tagme' tag
 
-        final DBComicInfo[] results = new DBComicInfo[names.length];
+        final ComicInfo[] results = new ComicInfo[names.length];
 
         for (int i = 0; i < names.length; i++) {
-            DBComicInfo comic = new DBComicInfo(nextComicID, names[i]);
+            ComicInfo comic = new ComicInfo(nextComicID, names[i]);
             nextComicID++;
             comicInfos.add(comic);
             results[i] = comic;
@@ -201,18 +200,18 @@ public class ImageDatabase {
         return results;
     }
 
-    public synchronized DBComicInfo queueCreateComic(String name) {
+    public synchronized ComicInfo queueCreateComic(String name) {
         return queueCreateComics(name)[0];
     }
 
-    public synchronized void queueDeleteImages(DBImageInfo... images) {
-        for (DBImageInfo image : images) {
+    public synchronized void queueDeleteImages(ImageInfo... images) {
+        for (ImageInfo image : images) {
             image.setToBeDeleted(true);
         }
     }
 
-    public synchronized void queueDeleteComics(DBComicInfo... comics) {
-        for (DBComicInfo comic : comics) {
+    public synchronized void queueDeleteComics(ComicInfo... comics) {
+        for (ComicInfo comic : comics) {
             comic.setToBeDeleted(true);
         }
     }
@@ -253,7 +252,7 @@ public class ImageDatabase {
     public int commitChanges() throws SQLException {
         StringBuilder queryBuilder = new StringBuilder();
 
-        for (DBImageInfo image : imageInfos) {
+        for (ImageInfo image : imageInfos) {
             if (image.isToBeDeleted()) {
                 if (image.isInserted()) {
                     buildImageDeleteQuery(queryBuilder, image);
@@ -270,7 +269,7 @@ public class ImageDatabase {
 
             image.setAsUpdated();
         }
-        for (DBComicInfo comic : comicInfos) {
+        for (ComicInfo comic : comicInfos) {
             if (comic.isToBeDeleted()) {
                 if (comic.isInserted()) {
                     buildComicDeleteQuery(queryBuilder, comic);
@@ -288,20 +287,21 @@ public class ImageDatabase {
             comic.setAsUpdated();
         }
 
+
         final int result = statement.executeUpdate(queryBuilder.toString());
         if (result > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
         return result;
     }
 
-    private void buildImageDeleteQuery(StringBuilder sb, DBImageInfo image) {
+    private void buildImageDeleteQuery(StringBuilder sb, ImageInfo image) {
         sb.append("DELETE FROM ").append(SQL_IMAGES_TABLE).append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
     }
 
-    private void buildComicDeleteQuery(StringBuilder sb, DBComicInfo comic) {
+    private void buildComicDeleteQuery(StringBuilder sb, ComicInfo comic) {
         sb.append("DELETE FROM ").append(SQL_COMICS_TABLE).append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
     }
 
-    private void buildComicUpdateQuery(StringBuilder sb, DBComicInfo comic) {
+    private void buildComicUpdateQuery(StringBuilder sb, ComicInfo comic) {
         boolean commaNeeded = false;
 
         sb.append("UPDATE ").append(SQL_COMICS_TABLE).append(" SET ");
@@ -323,7 +323,7 @@ public class ImageDatabase {
         sb.append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
     }
 
-    private void buildImageUpdateQuery(StringBuilder sb, DBImageInfo image) {
+    private void buildImageUpdateQuery(StringBuilder sb, ImageInfo image) {
         boolean commaNeeded = false;
 
         sb.append("UPDATE ").append(SQL_IMAGES_TABLE).append(" SET ");
@@ -355,7 +355,7 @@ public class ImageDatabase {
         sb.append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
     }
 
-    private void buildImageInsertQuery(StringBuilder sb, DBImageInfo image) {
+    private void buildImageInsertQuery(StringBuilder sb, ImageInfo image) {
         sb.append("INSERT INTO ").append(SQL_IMAGES_TABLE).append(" VALUES (").append(image.getId()).append(',');
 
         if (image.getPath() == null) {
@@ -373,7 +373,7 @@ public class ImageDatabase {
         sb.append(image.getRating()).append(",").append(image.getTimeAdded()).append(");\n");
     }
 
-    private void buildComicInsertQuery(StringBuilder sb, DBComicInfo comic) {
+    private void buildComicInsertQuery(StringBuilder sb, ComicInfo comic) {
         sb.append("INSERT INTO ").append(SQL_COMICS_TABLE).append(" VALUES (").append(comic.getId()).append(",'").append(comic.getName()).append("',");
 
         if (comic.getSource() == null) {

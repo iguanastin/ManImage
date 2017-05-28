@@ -1,6 +1,8 @@
 package manimage.common;
 
-public class DBComicInfo {
+import com.sun.istack.internal.NotNull;
+
+public class ComicInfo {
 
     private final int id;
     private final long timeAdded;
@@ -13,7 +15,7 @@ public class DBComicInfo {
     private boolean toBeDeleted = false;
 
 
-    public DBComicInfo(int id, String name, String source, long timeAdded) {
+    public ComicInfo(int id, String name, String source, long timeAdded) {
         this.id = id;
         this.name = name;
         this.source = source;
@@ -23,7 +25,7 @@ public class DBComicInfo {
         toBeDeleted = false;
     }
 
-    public DBComicInfo(int id, String name) {
+    public ComicInfo(int id, String name) {
         this.id = id;
         this.name = name;
         this.source = null;
@@ -80,10 +82,12 @@ public class DBComicInfo {
     //---------------------- Setters -----------------------------------------------------------------------------------
 
     public void setSource(String source) {
-        if (!this.source.equals(source)) sourceChanged = true;
+        if (this.source == null && source != null) sourceChanged = true;
+        else if (this.source != null && !this.source.equals(source)) sourceChanged = true;
         this.source = source;
     }
 
+    @NotNull
     public void setName(String name) {
         if (!this.name.equals(name)) nameChanged = true;
         this.name = name;
