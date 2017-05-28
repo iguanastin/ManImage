@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import manimage.common.DBImageInfo;
 import manimage.common.ImageInfo;
 import manimage.common.ImageSet;
 
@@ -20,26 +21,24 @@ public class MainController {
     public Label previewTagsLabel;
 
     //TODO: Clean up C style handling
-    //TODO: Add database loading functionality
 
-    private ImageSet imageSet = new ImageSet();
-    private ImageInfo currentPreview;
+    private DBImageInfo currentPreview;
     private File lastFolder;
 
 
     @FXML
     public void initialize() {
-        grid.setImageSet(imageSet);
+//        grid.setImageSet(imageSet);
 
         //TODO: Swap to using databases
     }
 
-    void preview(ImageInfo info) {
+    void preview(DBImageInfo info) {
         if (currentPreview != null) currentPreview.unloadImage();
         currentPreview = info;
 
         previewDynamicImageView.setImage(info.getImage(true));
-        previewTagsLabel.setText(info.getTags().toString());
+//        previewTagsLabel.setText(info.getTags().toString());
     }
 
     public void addFilesClicked(ActionEvent event) {
@@ -52,7 +51,7 @@ public class MainController {
         if (files == null || files.isEmpty()) {
             //Canceled
         } else {
-            imageSet.initAndAddAll(files);
+//            imageSet.initAndAddAll(files);
 
             lastFolder = files.get(0).getParentFile();
         }
@@ -67,7 +66,7 @@ public class MainController {
         if (folder == null) {
             //Canceled
         } else {
-            imageSet.initAndAddSubfiles(folder, false);
+//            imageSet.initAndAddSubfiles(folder, false);
 
             lastFolder = folder.getParentFile();
         }
@@ -82,7 +81,7 @@ public class MainController {
         if (folder == null) {
             //Canceled
         } else {
-            imageSet.initAndAddSubfiles(folder, true);
+//            imageSet.initAndAddSubfiles(folder, true);
 
             lastFolder = folder.getParentFile();
         }

@@ -4,11 +4,12 @@ package manimage.main;
 import javafx.geometry.Insets;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
+import manimage.common.DBImageInfo;
 import manimage.common.ImageInfo;
 
 public class GridImageView extends BorderPane {
 
-    private ImageInfo info;
+    private DBImageInfo info;
 
     private DynamicImageView view;
 
@@ -18,7 +19,7 @@ public class GridImageView extends BorderPane {
     private static final String backgroundColor = "DDDDDD";
 
 
-    public GridImageView(ImageInfo info) {
+    public GridImageView(DBImageInfo info) {
         this.info = info;
 
         setCenter(view = new DynamicImageView());
@@ -27,18 +28,15 @@ public class GridImageView extends BorderPane {
         setMaxSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
 
         setOnMouseEntered(event -> Main.mainController.preview(getInfo()));
-        setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) setSelected(!isSelected());
-        });
 
         setSelected(false);
     }
 
-    ImageInfo getInfo() {
+    DBImageInfo getInfo() {
         return info;
     }
 
-    void setInfo(ImageInfo info) {
+    void setInfo(DBImageInfo info) {
         this.info = info;
     }
 

@@ -13,7 +13,7 @@ public class ImageDatabase {
             "DROP TABLE IF EXISTS comic_tagged;\n" +
             "DROP TABLE IF EXISTS comics;\n" +
             "DROP TABLE IF EXISTS comic_pages;";
-    private static final String SQL_INITIALIZE_TABLES = "CREATE TABLE images(image_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, file_path NVARCHAR(1024) UNIQUE, source_url NVARCHAR(1024), rating BYTE NOT NULL DEFAULT(0), image_time_added LONG NOT NULL);\n" +
+    private static final String SQL_INITIALIZE_TABLES = "CREATE TABLE images(image_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, file_path NVARCHAR(1024) UNIQUE, source_url NVARCHAR(1024), rating TINYINT NOT NULL DEFAULT(0), image_time_added LONG NOT NULL);\n" +
             "CREATE TABLE tags(tag_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, tag_name NVARCHAR(128) NOT NULL UNIQUE);\n" +
             "CREATE TABLE image_tagged(image_id INT NOT NULL, tag_id INT NOT NULL, PRIMARY KEY(tag_id, image_id), FOREIGN KEY (tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE, FOREIGN KEY (image_id) REFERENCES images(image_id) ON DELETE CASCADE);\n" +
             "INSERT INTO tags (tag_name) VALUES ('tagme');\n" +
@@ -26,6 +26,7 @@ public class ImageDatabase {
     public static final String SQL_IMAGE_TAGGED_TABLE = "image_tagged";
     public static final String SQL_COMICS_TABLE = "comics";
     public static final String SQL_COMICS_TAGGED_TABLE = "comics_tagged";
+    public static final String SQL_COMIC_PAGES_TABLE = "comic_pages";
 
     public static final String SQL_IMAGE_ID = "image_id";
     public static final String SQL_IMAGE_PATH = "file_path";
@@ -43,17 +44,31 @@ public class ImageDatabase {
 
     public static final String SQL_COMIC_PAGES_PAGENUM = "page_num";
 
+    private final ArrayList<ImageDatabaseUpdateListener> changeListeners = new ArrayList<>();
+
     private final ArrayList<DBImageInfo> imageInfos = new ArrayList<>();
     private final ArrayList<DBComicInfo> comicInfos = new ArrayList<>();
     private final Connection connection;
     private final Statement statement;
 
 
-    public ImageDatabase(String path, String username, String password, boolean cleanAndInitalize) throws SQLException {
+    public ImageDatabase(String path, String username, String password, boolean forceClean) throws SQLException {
         connection = DriverManager.getConnection("jdbc:h2:" + path, username, password);
         statement = connection.createStatement();
 
-        if (cleanAndInitalize) statement.executeUpdate(SQL_DROP_TABLES + "\n" + SQL_INITIALIZE_TABLES);
+        if (forceClean) {
+            cleanAndInitialize();
+        } else {
+            try {
+                test();
+            } catch (SQLException ex) {
+                cleanAndInitialize();
+            }
+        }
+    }
+
+    private void cleanAndInitialize() throws SQLException {
+        statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
     }
 
     public ArrayList<DBImageInfo> getImages(String query) throws SQLException {
@@ -74,7 +89,7 @@ public class ImageDatabase {
 
         rs.close();
 
-        //TODO: Test
+        //TODO: Bug. Modified, but uncommitted, images are returned as part of the results
 
         return results;
     }
@@ -95,7 +110,7 @@ public class ImageDatabase {
             results.add(info);
         }
 
-        //TODO: Test
+        //TODO: Bug. Modified, but uncommitted, comics are returned as part of the results
 
         return results;
     }
@@ -120,8 +135,10 @@ public class ImageDatabase {
         return null;
     }
 
-    public DBImageInfo addImage(String path) throws SQLException {
-        statement.executeUpdate("INSERT INTO " + SQL_IMAGES_TABLE + " (" + SQL_IMAGE_PATH + ", " + SQL_IMAGE_TIME_ADDED + ") VALUES ('" + path + "'," + System.currentTimeMillis());
+    public DBImageInfo createImage(String path) throws SQLException {
+        //TODO: Mark new images with 'tagme' tag
+
+        statement.executeUpdate("INSERT INTO " + SQL_IMAGES_TABLE + " (" + SQL_IMAGE_PATH + ", " + SQL_IMAGE_TIME_ADDED + ") VALUES ('" + path + "'," + System.currentTimeMillis() + ")");
 
         //Get created image info from database
         ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_IMAGES_TABLE + " WHERE " + SQL_IMAGE_PATH + "='" + path + "'");
@@ -134,7 +151,9 @@ public class ImageDatabase {
         }
     }
 
-    public DBComicInfo addComic(String name) throws SQLException {
+    public DBComicInfo createComic(String name) throws SQLException {
+        //TODO: Mark new comics with 'tagme' tag
+
         statement.executeUpdate("INSERT INTO " + SQL_COMICS_TABLE + " (" + SQL_COMIC_NAME + "," + SQL_COMIC_TIME_ADDED + ") VALUES ('" + name + "'," + System.currentTimeMillis() + ")");
 
         //Get created comic info from database
@@ -172,6 +191,38 @@ public class ImageDatabase {
 
         comicInfos.removeAll(Arrays.asList(infos));
         return statement.executeUpdate("DELETE FROM " + SQL_COMICS_TABLE + " WHERE " + sb);
+    }
+
+    public void clearCachedImages() {
+        imageInfos.clear();
+    }
+
+    public void clearCachedComics() {
+        comicInfos.clear();
+    }
+
+    /**
+     * Tests the basic architecture of the database
+     * @throws SQLException When basic architecture is unexpected
+     */
+    public void test() throws SQLException {
+        //Test images table
+        statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_IMAGE_PATH + "," + SQL_IMAGE_SOURCE + "," + SQL_IMAGE_RATING + "," + SQL_IMAGE_TIME_ADDED + " FROM " + SQL_IMAGES_TABLE);
+
+        //Test tags table
+        statement.executeQuery("SELECT TOP 1 " + SQL_TAG_ID + "," + SQL_TAG_NAME + " FROM " + SQL_TAGS_TABLE);
+
+        //Test image_tagged table
+        statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_TAG_ID + " FROM " + SQL_IMAGE_TAGGED_TABLE);
+
+        //Test comics table
+        statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_COMIC_NAME + "," + SQL_COMIC_SOURCE + "," + SQL_COMIC_TIME_ADDED + " FROM " + SQL_COMICS_TABLE);
+
+        //Test comic_tagged table
+        statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_TAG_ID + " FROM " + SQL_COMICS_TAGGED_TABLE);
+
+        //Test comic_pages table
+        statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_COMIC_ID + "," + SQL_COMIC_PAGES_PAGENUM + " FROM " + SQL_COMIC_PAGES_TABLE);
     }
 
     public int commitChanges() throws SQLException {
@@ -224,7 +275,19 @@ public class ImageDatabase {
 
         //TODO: Test
 
-        return statement.executeUpdate(sb.toString());
+        final int result = statement.executeUpdate(sb.toString());
+
+        if (result > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
+
+        return result;
+    }
+
+    public void addChangeListener(ImageDatabaseUpdateListener listener) {
+        changeListeners.add(listener);
+    }
+
+    public boolean removeChangeListener(ImageDatabaseUpdateListener listener) {
+        return changeListeners.remove(listener);
     }
 
     public void close() throws SQLException {

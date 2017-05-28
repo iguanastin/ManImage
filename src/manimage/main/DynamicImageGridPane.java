@@ -1,23 +1,24 @@
 package manimage.main;
 
 import javafx.geometry.Bounds;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import manimage.common.ImageInfo;
-import manimage.common.ImageSet;
-import manimage.common.ImageSetListener;
+import manimage.common.DBImageInfo;
+import manimage.common.ImageDatabase;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 
@@ -27,26 +28,14 @@ public class DynamicImageGridPane extends GridPane {
     //TODO: Centralize this array instead of getChildren()
     private final List<GridImageView> selected = new ArrayList<>();
 
-    private ImageSet imageSet;
-    //TODO: Update to use database instead
-    private Comparator<ImageInfo> sortMethod;
-
     private final ContextMenu contextMenu;
 
-    private final ImageSetListener imageSetListener = new ImageSetListener() {
-        @Override
-        public void onImageAdded(ImageInfo info) {
-            updateImageViews();
-        }
+    private String orderBy = ImageDatabase.SQL_IMAGE_TIME_ADDED;
+    private boolean descending = true;
+    private int pageLength = 100;
+    private int pageNum = 0;
 
-        @Override
-        public void onImageRemoved(ImageInfo info) {
-            updateImageViews();
-            clearSelected();
-        }
-    };
-
-    private final int THUMBNAIL_SIZE = 140;
+    private ImageDatabase db;
 
 
     //----------------- Constructors -----------------------------------------------------------------------------------
@@ -80,7 +69,7 @@ public class DynamicImageGridPane extends GridPane {
         items[4].setOnAction(event -> {
             if (getFirstSelected() != null) {
                 try {
-                    Desktop.getDesktop().open(getFirstSelected().getInfo().getFile());
+                    Desktop.getDesktop().open(new File(getFirstSelected().getInfo().getPath()));
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -91,7 +80,7 @@ public class DynamicImageGridPane extends GridPane {
         items[5].setOnAction(event -> {
             if (!selected.isEmpty()) {
                 try {
-                    Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getFile().getAbsolutePath());
+                    Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getPath());
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -102,12 +91,7 @@ public class DynamicImageGridPane extends GridPane {
 
         items[7] = new MenuItem("Delete");
         items[7].setOnAction(event -> {
-            final ArrayList<ImageInfo> infoList = new ArrayList<>();
-
-            selected.forEach(select -> infoList.add(select.getInfo()));
-
-            infoList.forEach(info -> getImageSet().remove(info));
-
+            //TODO: Remove from database
             //TODO: Actual delete/move to recycle bin
         });
 
@@ -136,6 +120,19 @@ public class DynamicImageGridPane extends GridPane {
 
             //TODO: Figure out where keyevents actually happen
         });
+
+        //----------------- Setup database -----------------------------------------------------------------------------
+
+        try {
+            db = new ImageDatabase("C:\\Users\\Austin\\h2db", "sa", "sa", false);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        db.addChangeListener(this::updateView);
+
+        updateView();
+
     }
 
     //------------------------ Getters ---------------------------------------------------------------------------------
@@ -154,10 +151,6 @@ public class DynamicImageGridPane extends GridPane {
 
     private int getIndex(Node n) {
         return columnWidth() * getRowIndex(n) + getColumnIndex(n);
-    }
-
-    public ImageSet getImageSet() {
-        return imageSet;
     }
 
     private GridImageView getFirstSelected() {
@@ -223,26 +216,6 @@ public class DynamicImageGridPane extends GridPane {
         updateSelected();
     }
 
-    //---------------------- Setters -----------------------------------------------------------------------------------
-
-    void setSortMethod(Comparator<ImageInfo> c) {
-        this.sortMethod = c;
-
-        updateImageViews();
-    }
-
-    void setImageSet(ImageSet imageSet) {
-        if (this.imageSet != null) {
-            this.imageSet.removeListener(imageSetListener);
-        }
-
-        this.imageSet = imageSet;
-
-        if (imageSet != null) {
-            imageSet.addListener(imageSetListener);
-        }
-    }
-
     //------------------------ Updaters --------------------------------------------------------------------------------
 
     private void updateSelected() {
@@ -251,63 +224,55 @@ public class DynamicImageGridPane extends GridPane {
         }
     }
 
-    private void updateImageViews() {
-        if (getImageSet() == null) {
-            getChildren().clear();
-            return;
-        }
-
-        ArrayList<ImageInfo> infoList = (ArrayList<ImageInfo>) getImageSet().getInfoList().clone();
-        if (sortMethod != null) infoList.sort(sortMethod);
-        //TODO: Improve efficiency of sorting image list
-
-        int i = 0;
-        for (ImageInfo info : infoList) {
-            GridImageView existingView = null;
-            if (i < getCount()) existingView = imageViews.get(i);
-
-            if (existingView != null) {
-                existingView.setInfo(info);
-                existingView.loadThumbnail(true);
-            } else {
-                if (getCount() / columnWidth() >= rowHeight())
-                    getRowConstraints().add(new RowConstraints(150, 150, 150));
-
-                GridImageView view = new GridImageView(info);
-                add(view, getCount() % columnWidth(), getCount() / columnWidth());
-                imageViews.add(view);
-                view.setOnMouseClicked(event -> {
-                    if (event.getButton() == MouseButton.PRIMARY || selected.isEmpty())
-                        select(view, event.isShiftDown(), event.isControlDown());
-                });
-                view.setOnContextMenuRequested(event -> {
-                    if (!view.isSelected()) select(view, false, false);
-                    contextMenu.show(this, event.getScreenX(), event.getScreenY());
-                });
-            }
-
-            i++;
-        }
-
-        if (i < getChildren().size()) {
-            //Remove all unused ImageViews
-            getChildren().remove(i, getChildren().size());
-            imageViews.removeAll(imageViews.subList(i, imageViews.size()));
-        }
-
-        updateVisibleThumbnails();
-    }
-
     private void updateVisibleThumbnails() {
         ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
         Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
 
-        for (Node n : getChildrenUnmodifiable()) {
+        for (GridImageView n : imageViews) {
             Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
 
-            if (n instanceof GridImageView && !((GridImageView) n).isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
-                ((GridImageView) n).loadThumbnail(true);
+            if (!n.isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
+                n.loadThumbnail(true);
             }
+        }
+    }
+
+    private void updateView() {
+        try {
+            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy + " OFFSET " + pageLength*pageNum + " LIMIT " + pageLength;
+            if (descending) query += "DESC";
+            ArrayList<DBImageInfo> infos = db.getImages(query);
+
+            int i = 0;
+            for (DBImageInfo info : infos) {
+                if (i < imageViews.size()) {
+                    //Re-use old imageview
+                    imageViews.get(i).setInfo(info);
+                    imageViews.get(i).loadThumbnail(true);
+                } else {
+                    //Create new imageview
+                    GridImageView view = new GridImageView(info);
+                    view.loadThumbnail(true);
+                    view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
+                    view.setOnMouseClicked(event -> {
+                        if (event.isPrimaryButtonDown()) select(view, event.isShiftDown(), event.isControlDown());
+                    });
+                    imageViews.add(view);
+
+                    //Add new row if not enough present
+                    if (getRowConstraints().size() <= i/columnWidth()) getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
+
+                    add(view, i%columnWidth(), i/columnWidth());
+                }
+
+                i++;
+            }
+
+            for (int k = imageViews.size()-i; k > 0; k--) {
+                imageViews.remove(imageViews.size()-1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 

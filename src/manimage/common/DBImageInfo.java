@@ -15,7 +15,9 @@ public class DBImageInfo {
     private final int id;
     private final long timeAdded;
 
-    boolean pathChanged = false, sourceChanged = false, ratingChanged = false;
+    private boolean pathChanged = false, sourceChanged = false, ratingChanged = false;
+
+    private static final int THUMBNAIL_SIZE = 140;
 
 
     public DBImageInfo(int id, String path, String source, byte rating, long timeAdded) {
@@ -74,9 +76,9 @@ public class DBImageInfo {
 
     //--------------- Getters ------------------------------------------------------------------------------------------
 
-    public synchronized Image getThumbnail(boolean backgroundLoading, int thumbnailSize) {
+    public synchronized Image getThumbnail(boolean backgroundLoading) {
         if (thumbnail == null)
-            thumbnail = new Image("file:" + path, thumbnailSize, thumbnailSize, true, true, backgroundLoading);
+            thumbnail = new Image("file:" + path, THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, backgroundLoading);
 
         return thumbnail;
     }

@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import manimage.common.DBImageInfo;
+import manimage.common.ImageDatabase;
 import manimage.common.ImageHistogram;
 import org.h2.jdbcx.JdbcDataSource;
 
