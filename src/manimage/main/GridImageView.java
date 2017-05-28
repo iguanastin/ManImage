@@ -2,10 +2,8 @@ package manimage.main;
 
 
 import javafx.geometry.Insets;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import manimage.common.DBImageInfo;
-import manimage.common.ImageInfo;
 
 public class GridImageView extends BorderPane {
 
@@ -24,8 +22,8 @@ public class GridImageView extends BorderPane {
 
         setCenter(view = new DynamicImageView());
         setMargin(view, new Insets(5));
-        setMinSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
-        setMaxSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
+        setMinSize(DBImageInfo.THUMBNAIL_SIZE, DBImageInfo.THUMBNAIL_SIZE);
+        setMaxSize(DBImageInfo.THUMBNAIL_SIZE, DBImageInfo.THUMBNAIL_SIZE);
 
         setOnMouseEntered(event -> Main.mainController.preview(getInfo()));
 

@@ -9,8 +9,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import manimage.common.DBImageInfo;
 import manimage.common.ImageDatabase;
-import manimage.common.ImageInfo;
-import manimage.common.ImageSet;
 
 import java.io.File;
 import java.sql.SQLException;

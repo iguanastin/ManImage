@@ -22,7 +22,7 @@ public class DBImageInfo {
     private boolean toBeInserted = false;
     private boolean toBeDeleted = false;
 
-    private static final int THUMBNAIL_SIZE = 140;
+    public static final int THUMBNAIL_SIZE = 140;
 
 
     public DBImageInfo(int id, String path, String source, byte rating, long timeAdded) {
