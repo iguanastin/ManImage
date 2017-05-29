@@ -3,6 +3,8 @@ package manimage.main;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
@@ -134,21 +136,32 @@ public class MainController {
     public void gridScrollPaneKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.LEFT) {
             grid.selectLeft(event.isShiftDown(), event.isControlDown());
+            preview(grid.getLastSelected().getInfo());
+            ensureVisible(gridScrollPane, grid.getLastSelected());
+            event.consume();
         } else if (event.getCode() == KeyCode.RIGHT) {
             grid.selectRight(event.isShiftDown(), event.isControlDown());
+            preview(grid.getLastSelected().getInfo());
+            ensureVisible(gridScrollPane, grid.getLastSelected());
+            event.consume();
         } else if (event.getCode() == KeyCode.DOWN) {
             grid.selectDown(event.isShiftDown(), event.isControlDown());
-            //TODO: Find out why pressing down at the bottom row causes it to return to the top
+            preview(grid.getLastSelected().getInfo());
+            ensureVisible(gridScrollPane, grid.getLastSelected());
+            event.consume();
         } else if (event.getCode() == KeyCode.UP) {
             grid.selectUp(event.isShiftDown(), event.isControlDown());
+            preview(grid.getLastSelected().getInfo());
+            ensureVisible(gridScrollPane, grid.getLastSelected());
+            event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.A) {
             if (grid.areAllSelected()) {
                 grid.unselectAll();
             } else {
                 grid.selectAll();
             }
+            event.consume();
         }
-        event.consume();
     }
 
     public void gridScrollPaneScrolled(ScrollEvent event) {
@@ -178,6 +191,22 @@ public class MainController {
 
     void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    //-------------------- Operators -----------------------------------------------------------------------------------
+
+    private static void ensureVisible(ScrollPane pane, Node node) {
+        Bounds viewport = pane.getViewportBounds();
+        double contentHeight = pane.getContent().getBoundsInLocal().getHeight();
+        double nodeMinY = node.getBoundsInParent().getMinY();
+        double nodeMaxY = node.getBoundsInParent().getMaxY();
+        double viewportMinY = (contentHeight - viewport.getHeight()) * pane.getVvalue();
+        double viewportMaxY = viewportMinY + viewport.getHeight();
+        if (nodeMinY < viewportMinY) {
+            pane.setVvalue(nodeMinY / (contentHeight - viewport.getHeight()));
+        } else if (nodeMaxY > viewportMaxY) {
+            pane.setVvalue((nodeMaxY - viewport.getHeight()) / (contentHeight - viewport.getHeight()));
+        }
     }
 
 }

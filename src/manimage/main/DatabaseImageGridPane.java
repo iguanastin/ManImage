@@ -139,7 +139,7 @@ public class DatabaseImageGridPane extends GridPane {
         return columnWidth() * getRowIndex(n) + getColumnIndex(n);
     }
 
-    private GridImageView getFirstSelected() {
+    GridImageView getFirstSelected() {
         if (!selected.isEmpty()) {
             return selected.get(0);
         } else {
@@ -147,7 +147,7 @@ public class DatabaseImageGridPane extends GridPane {
         }
     }
 
-    private GridImageView getLastSelected() {
+    GridImageView getLastSelected() {
         if (!selected.isEmpty()) {
             return selected.get(selected.size() - 1);
         } else {
@@ -265,7 +265,7 @@ public class DatabaseImageGridPane extends GridPane {
 
         if (index >= imageViews.size()) index = imageViews.size() - 1;
 
-        select(imageViews.get(index), shiftDown, controlDown);
+        if (!imageViews.get(index).isSelected() || selected.size() > 1) select(imageViews.get(index), shiftDown, controlDown);
     }
 
     void selectUp(boolean shiftDown, boolean controlDown) {
@@ -273,7 +273,7 @@ public class DatabaseImageGridPane extends GridPane {
 
         if (index < 0) index = 0;
 
-        select(imageViews.get(index), shiftDown, controlDown);
+        if (!imageViews.get(index).isSelected() || selected.size() > 1) select(imageViews.get(index), shiftDown, controlDown);
     }
 
     void selectAll() {
