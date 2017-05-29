@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -20,6 +21,7 @@ public class MainController {
     public DynamicImageView previewDynamicImageView;
     public DynamicImageGridPane grid;
     public Label previewTagsLabel;
+    public ScrollPane gridScrollPane;
 
     //TODO: Clean up C style handling
 
@@ -118,6 +120,10 @@ public class MainController {
 
     }
 
+    public void gridScrollPaneClicked(MouseEvent event) {
+        System.out.println("TEST"); //TODO: See if this catches clicking on the scrollpane
+    }
+
     //--------------------- Getters ------------------------------------------------------------------------------------
 
     private ArrayList<String> getImagesFiles(File folder, boolean recurse) {
@@ -136,4 +142,5 @@ public class MainController {
 
         return results;
     }
+
 }

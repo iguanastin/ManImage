@@ -25,7 +25,6 @@ import java.util.List;
 public class DynamicImageGridPane extends GridPane {
 
     private final ArrayList<GridImageView> imageViews = new ArrayList<>();
-    //TODO: Centralize this array instead of getChildren()
     private final ArrayList<GridImageView> selected = new ArrayList<>();
 
     private final ContextMenu contextMenu;
@@ -62,8 +61,17 @@ public class DynamicImageGridPane extends GridPane {
         //TODO: Implement info viewing
 
         items[2] = new Menu("Set Rating...");
-        ((Menu) items[2]).getItems().addAll(new MenuItem("★"), new MenuItem("★★"), new MenuItem("★★★"), new MenuItem("★★★★"), new MenuItem("★★★★★"));
-        //TODO: Implement rating edit
+        MenuItem r1 = new MenuItem("★");
+        r1.setOnAction(event -> setSelectedRating((byte) 1));
+        MenuItem r2 = new MenuItem("★★");
+        r1.setOnAction(event -> setSelectedRating((byte) 2));
+        MenuItem r3 = new MenuItem("★★★");
+        r1.setOnAction(event -> setSelectedRating((byte) 3));
+        MenuItem r4 = new MenuItem("★★★★");
+        r1.setOnAction(event -> setSelectedRating((byte) 4));
+        MenuItem r5 = new MenuItem("★★★★★");
+        r1.setOnAction(event -> setSelectedRating((byte) 5));
+        ((Menu) items[2]).getItems().addAll(r1, r2, r3, r4, r5);
 
         items[3] = new SeparatorMenuItem();
 
@@ -116,9 +124,7 @@ public class DynamicImageGridPane extends GridPane {
 
                 select(imageViews.get(index), event.isShiftDown(), event.isControlDown());
             }
-
-            //TODO: Figure out where keyevents actually happen
-        }); //TODO: Event is never fired
+        }); //TODO: Find where key events are actually fired
 
         //----------------- Setup database -----------------------------------------------------------------------------
 
@@ -221,6 +227,17 @@ public class DynamicImageGridPane extends GridPane {
         if (!selected.isEmpty()) {
             selected.forEach(view -> view.getInfo().setToBeDeleted());
             clearSelected();
+            try {
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void setSelectedRating(byte newRating) {
+        if (!selected.isEmpty()) {
+            selected.forEach(view -> view.getInfo().setRating(newRating));
             try {
                 db.commitChanges();
             } catch (SQLException ex) {
