@@ -22,7 +22,7 @@ public class Main extends Application {
     public void start(Stage mainStage) throws Exception {
         //------------ Build main stage --------------------------------------------------------------------------------
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("application.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../fxml/application.fxml"));
         Parent mainRoot = loader.load();
         mainStage.setTitle("ManImage");
         mainStage.setScene(new Scene(mainRoot, 1600, 900));
@@ -34,11 +34,9 @@ public class Main extends Application {
         //-------------- Build SingleEditor stage ----------------------------------------------------------------------
 
         Stage singleEditorStage = new Stage();
-        Parent singleEditorRoot = FXMLLoader.load(getClass().getResource("../editors/singleeditor.fxml"));
+        Parent singleEditorRoot = FXMLLoader.load(getClass().getResource("../fxml/singleeditor.fxml"));
         singleEditorStage.setScene(new Scene(singleEditorRoot));
         singleEditorStage.setTitle("Edit Image");
-
-        //TODO: Refactor fxml file locations to be consistent
     }
 
     public static void main(String[] args) {
