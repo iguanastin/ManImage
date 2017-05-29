@@ -135,9 +135,9 @@ class ImageDatabaseTest {
         try {
             ImageInfo[] created = db.queueCreateImages("image1", "image2", "image3", "image4", "image5");
             db.commitChanges();
-            created[0].setToBeDeleted(true);
-            created[1].setToBeDeleted(true);
-            created[2].setToBeDeleted(true);
+            created[0].setToBeDeleted();
+            created[1].setToBeDeleted();
+            created[2].setToBeDeleted();
             Assertions.assertTrue(created[0].isToBeDeleted());
             Assertions.assertTrue(created[1].isToBeDeleted());
             Assertions.assertTrue(created[2].isToBeDeleted());

@@ -110,18 +110,19 @@ public class ImageDatabase {
 
         while (rs.next()) {
             final int id = rs.getInt(SQL_IMAGE_ID);
-            ImageInfo info = getCachedImage(id);
+            ImageInfo image = getCachedImage(id);
 
-            if (info == null) {
-                info = new ImageInfo(id, rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
+            if (image == null) {
+                image = new ImageInfo(id, rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
+                imageInfos.add(image);
             }
 
-            results.add(info);
+            results.add(image);
         }
 
         rs.close();
 
-        //TODO: Bug. Modified, but uncommitted, images are returned as part of the results
+        //TODO: Issue. Modified, but uncommitted images are returned as part of the results
 
         return results;
     }
@@ -133,16 +134,17 @@ public class ImageDatabase {
 
         while (rs.next()) {
             final int id = rs.getInt(SQL_COMIC_ID);
-            ComicInfo info = getCachedComic(id);
+            ComicInfo comic = getCachedComic(id);
 
-            if (info == null) {
-                info = new ComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
+            if (comic == null) {
+                comic = new ComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
+                comicInfos.add(comic);
             }
 
-            results.add(info);
+            results.add(comic);
         }
 
-        //TODO: Bug. Modified, but uncommitted, comics are returned as part of the results
+        //TODO: Issue. Modified, but uncommitted comics are returned as part of the results
 
         return results;
     }

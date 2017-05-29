@@ -5,6 +5,7 @@ import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 
 import java.lang.ref.WeakReference;
+import java.util.Date;
 
 public class ImageInfo {
 
@@ -66,16 +67,20 @@ public class ImageInfo {
         return sourceChanged;
     }
 
-    public boolean isInserted() {
+    public synchronized boolean isInserted() {
         return inserted;
     }
 
-    public boolean isToBeDeleted() {
+    public synchronized boolean isToBeDeleted() {
         return toBeDeleted;
     }
 
-    public boolean isToBeInserted() {
+    public synchronized boolean isToBeInserted() {
         return toBeInserted;
+    }
+
+    public synchronized boolean isSynchronized() {
+        return !isChanged() && !isToBeDeleted() && isInserted();
     }
 
     //--------------- Getters ------------------------------------------------------------------------------------------
@@ -140,6 +145,15 @@ public class ImageInfo {
         return source;
     }
 
+    @Override
+    public synchronized String toString() {
+        String result = "ImageInfo(" + getId() + ", " + new Date(getTimeAdded()) + "): ";
+        if (isSynchronized()) result += "Synchronized";
+        else result += "Not Synchronized";
+
+        return result;
+    }
+
     //------------- Setters --------------------------------------------------------------------------------------------
 
     public synchronized void setAsUpdated() {
@@ -164,16 +178,12 @@ public class ImageInfo {
         this.path = path;
     }
 
-    public void setInserted(boolean b) {
+    public synchronized void setInserted(boolean b) {
         inserted = b;
     }
 
-    public void setToBeDeleted(boolean toBeDeleted) {
-        this.toBeDeleted = toBeDeleted;
-    }
-
-    public void setToBeInserted(boolean toBeInserted) {
-        this.toBeInserted = toBeInserted;
+    public synchronized void setToBeDeleted() {
+        this.toBeDeleted = true;
     }
 
 }

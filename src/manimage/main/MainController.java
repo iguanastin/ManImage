@@ -12,6 +12,7 @@ import manimage.common.ImageDatabase;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainController {
@@ -25,16 +26,21 @@ public class MainController {
     private File lastFolder;
 
 
+    //---------------------- Initializers ------------------------------------------------------------------------------
+
     @FXML
     public void initialize() {
         grid.updateView();
     }
 
+    //------------------ Operators -------------------------------------------------------------------------------------
+
     void preview(ImageInfo info) {
         previewDynamicImageView.setImage(info.getImage(true));
-//        previewTagsLabel.setText(info.getTags().toString());
         //TODO: Fix tag label
     }
+
+    //-------------------- Listeners -----------------------------------------------------------------------------------
 
     public void addFilesClicked(ActionEvent event) {
         FileChooser fc = new FileChooser();
@@ -67,31 +73,16 @@ public class MainController {
         File folder = dc.showDialog(Main.mainStage);
 
         if (folder != null) {
-            insertImagesIntoDatabase(folder, false);
-
-            lastFolder = folder.getParentFile();
-        }
-    }
-
-    private void insertImagesIntoDatabase(File folder, boolean recurse) {
-        File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
-        if (files != null) {
             ImageDatabase db = grid.getImageDatabase();
+            getImagesFiles(folder, false).forEach(db::queueCreateImage);
 
             try {
-                for (File file : files) {
-                    if (file.isFile()) {
-                        db.queueCreateImage(file.getAbsolutePath());
-                    } else if (recurse) {
-                        insertImagesIntoDatabase(file, true);
-                    }
-                }
-
                 db.commitChanges();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
 
+            lastFolder = folder.getParentFile();
         }
     }
 
@@ -102,15 +93,20 @@ public class MainController {
         File folder = dc.showDialog(Main.mainStage);
 
         if (folder != null) {
-            insertImagesIntoDatabase(folder, true);
+            ImageDatabase db = grid.getImageDatabase();
+            getImagesFiles(folder, true).forEach(db::queueCreateImage);
+
+            try {
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
 
             lastFolder = folder.getParentFile();
         }
     }
 
     public void exitClicked(ActionEvent event) {
-        System.out.println("Exiting via menu item");
-
         Platform.exit();
     }
 
@@ -122,4 +118,22 @@ public class MainController {
 
     }
 
+    //--------------------- Getters ------------------------------------------------------------------------------------
+
+    private ArrayList<String> getImagesFiles(File folder, boolean recurse) {
+        final ArrayList<String> results = new ArrayList<>();
+        final File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    results.add(file.getAbsolutePath());
+                } else if (recurse) {
+                    results.addAll(getImagesFiles(file, true));
+                }
+            }
+        }
+
+        return results;
+    }
 }

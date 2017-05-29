@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -93,9 +92,7 @@ public class DynamicImageGridPane extends GridPane {
         items[6] = new SeparatorMenuItem();
 
         items[7] = new MenuItem("Remove");
-        items[7].setOnAction(event -> {
-            deleteSelected();
-        });
+        items[7].setOnAction(event -> deleteSelected());
 
         contextMenu = new ContextMenu(items);
 
@@ -222,9 +219,9 @@ public class DynamicImageGridPane extends GridPane {
 
     private void deleteSelected() {
         if (!selected.isEmpty()) {
-            selected.forEach(image -> image.getInfo().setToBeDeleted(true));
+            selected.forEach(view -> view.getInfo().setToBeDeleted());
+            clearSelected();
             try {
-                clearSelected();
                 db.commitChanges();
             } catch (SQLException ex) {
                 ex.printStackTrace();
@@ -269,7 +266,7 @@ public class DynamicImageGridPane extends GridPane {
                     view.loadThumbnail(true);
                     view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
                     view.setOnMouseClicked(event -> {
-                        if (event.isPrimaryButtonDown()) select(view, event.isShiftDown(), event.isControlDown());
+                        if (event.isPrimaryButtonDown() || !view.isSelected()) select(view, event.isShiftDown(), event.isControlDown());
                     });
                     imageViews.add(view);
 
