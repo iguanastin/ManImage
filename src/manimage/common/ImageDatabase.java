@@ -25,7 +25,7 @@ public class ImageDatabase {
     public static final String SQL_TAGS_TABLE = "tags";
     public static final String SQL_IMAGE_TAGGED_TABLE = "image_tagged";
     public static final String SQL_COMICS_TABLE = "comics";
-    public static final String SQL_COMICS_TAGGED_TABLE = "comic_tagged";
+    public static final String SQL_COMIC_TAGGED_TABLE = "comic_tagged";
     public static final String SQL_COMIC_PAGES_TABLE = "comic_pages";
 
     public static final String SQL_IMAGE_ID = "image_id";
@@ -44,10 +44,13 @@ public class ImageDatabase {
 
     public static final String SQL_COMIC_PAGES_PAGENUM = "page_num";
 
+    private final static int TAGME_TAG_ID = 1;
+
     private final ArrayList<ImageDatabaseUpdateListener> changeListeners = new ArrayList<>();
 
     private final ArrayList<ImageInfo> imageInfos = new ArrayList<>();
     private final ArrayList<ComicInfo> comicInfos = new ArrayList<>();
+    private final ArrayList<Tag> tags = new ArrayList<>();
     private final Connection connection;
     private final Statement statement;
 
@@ -149,6 +152,34 @@ public class ImageDatabase {
         return results;
     }
 
+    public void loadTags(ImageInfo image) throws SQLException {
+        ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_IMAGE_TAGGED_TABLE + " JOIN " + SQL_TAGS_TABLE + " ON " + SQL_TAGS_TABLE + "." + SQL_TAG_ID + "=" + SQL_IMAGE_TAGGED_TABLE + "." + SQL_TAG_ID + " WHERE " + SQL_IMAGE_TAGGED_TABLE + "." + SQL_IMAGE_ID + "=" + image.getId());
+
+        //TODO: Figure out if it makes sense to make tag retrieval batched
+
+        while (rs.next()) {
+            final int id = rs.getInt(SQL_TAG_ID);
+            Tag tag = getCachedTag(id);
+
+            if (tag == null) {
+                tag = new Tag(id, rs.getNString(SQL_TAG_NAME));
+                tags.add(tag);
+            }
+
+            image.addTag(tag);
+        }
+    }
+
+    private Tag getCachedTag(int id) {
+        for (Tag tag : tags) {
+            if (tag.getId() == id) {
+                return tag;
+            }
+        }
+
+        return null;
+    }
+
     private ImageInfo getCachedImage(int id) {
         for (ImageInfo info : imageInfos) {
             if (info.getId() == id) {
@@ -170,8 +201,6 @@ public class ImageDatabase {
     }
 
     public synchronized ImageInfo[] queueCreateImages(String... paths) {
-        //TODO: Mark new images with 'tagme' tag
-
         final ImageInfo[] results = new ImageInfo[paths.length];
 
         for (int i = 0; i < paths.length; i++) {
@@ -189,8 +218,6 @@ public class ImageDatabase {
     }
 
     public synchronized ComicInfo[] queueCreateComics(String... names) {
-        //TODO: Mark new comics with 'tagme' tag
-
         final ComicInfo[] results = new ComicInfo[names.length];
 
         for (int i = 0; i < names.length; i++) {
@@ -234,7 +261,7 @@ public class ImageDatabase {
         statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_COMIC_NAME + "," + SQL_COMIC_SOURCE + "," + SQL_COMIC_TIME_ADDED + " FROM " + SQL_COMICS_TABLE);
 
         //Test comic_tagged table
-        statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_TAG_ID + " FROM " + SQL_COMICS_TAGGED_TABLE);
+        statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_TAG_ID + " FROM " + SQL_COMIC_TAGGED_TABLE);
 
         //Test comic_pages table
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_COMIC_ID + "," + SQL_COMIC_PAGES_PAGENUM + " FROM " + SQL_COMIC_PAGES_TABLE);
@@ -378,6 +405,9 @@ public class ImageDatabase {
         }
 
         sb.append(image.getRating()).append(",").append(image.getTimeAdded()).append(");\n");
+
+        //Tag with 'tagme'
+        sb.append("INSERT INTO ").append(SQL_IMAGE_TAGGED_TABLE).append(" (").append(SQL_IMAGE_ID).append(',').append(SQL_TAG_ID).append(") VALUES (").append(image.getId()).append(',').append(TAGME_TAG_ID).append(");\n");
     }
 
     private void buildComicInsertQuery(StringBuilder sb, ComicInfo comic) {
@@ -390,6 +420,9 @@ public class ImageDatabase {
         }
 
         sb.append(comic.getTimeAdded()).append(");\n");
+
+        //Tag with 'tagme'
+        sb.append("INSERT INTO ").append(SQL_COMIC_TAGGED_TABLE).append(" (").append(SQL_COMIC_ID).append(',').append(SQL_TAG_ID).append(") VALUES (").append(comic.getId()).append(',').append(TAGME_TAG_ID).append(");\n");
     }
 
     public void addChangeListener(ImageDatabaseUpdateListener listener) {

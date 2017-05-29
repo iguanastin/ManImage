@@ -5,6 +5,7 @@ import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class ImageInfo {
@@ -12,6 +13,7 @@ public class ImageInfo {
     private WeakReference<Image> image;
     private WeakReference<Image> thumbnail;
     private ImageHistogram histogram;
+    private final ArrayList<Tag> tags = new ArrayList<>();
 
     private String path;
     private String source;
@@ -184,6 +186,12 @@ public class ImageInfo {
 
     public synchronized void setToBeDeleted() {
         this.toBeDeleted = true;
+    }
+
+    public synchronized boolean addTag(Tag tag) {
+        if (tags.contains(tag)) return false;
+        tags.add(tag);
+        return true;
     }
 
 }
