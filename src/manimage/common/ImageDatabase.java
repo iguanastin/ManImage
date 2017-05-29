@@ -56,6 +56,9 @@ public class ImageDatabase {
 
     private int nextImageID;
     private int nextComicID;
+    private int nextTagID;
+
+    //TODO: Implement tag add/remove queueing
 
 
     public ImageDatabase(String path, String username, String password, boolean forceClean) throws SQLException {
@@ -74,6 +77,7 @@ public class ImageDatabase {
 
         nextImageID = getHighestImageID() + 1;
         nextComicID = getHighestComicID() + 1;
+        nextTagID = getHighestTagID() + 1;
     }
 
     private int getHighestImageID() {
@@ -94,6 +98,19 @@ public class ImageDatabase {
             ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + " FROM " + SQL_COMICS_TABLE + " ORDER BY " + SQL_COMIC_ID + " DESC");
             if (rs.next()) {
                 return rs.getInt(SQL_COMIC_ID);
+            } else {
+                return 0;
+            }
+        } catch (SQLException ex) {
+            return 0;
+        }
+    }
+
+    private int getHighestTagID() {
+        try {
+            ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_TAG_ID + " FROM " + SQL_TAGS_TABLE + " ORDER BY " + SQL_TAG_ID + " DESC");
+            if (rs.next()) {
+                return rs.getInt(SQL_TAG_ID);
             } else {
                 return 0;
             }
@@ -155,7 +172,7 @@ public class ImageDatabase {
     public void loadTags(ImageInfo image) throws SQLException {
         ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_IMAGE_TAGGED_TABLE + " JOIN " + SQL_TAGS_TABLE + " ON " + SQL_TAGS_TABLE + "." + SQL_TAG_ID + "=" + SQL_IMAGE_TAGGED_TABLE + "." + SQL_TAG_ID + " WHERE " + SQL_IMAGE_TAGGED_TABLE + "." + SQL_IMAGE_ID + "=" + image.getId());
 
-        //TODO: Figure out if it makes sense to make tag retrieval batched
+        //TODO: Make tag retrieval batched
 
         while (rs.next()) {
             final int id = rs.getInt(SQL_TAG_ID);
@@ -248,28 +265,21 @@ public class ImageDatabase {
      * @throws SQLException When basic architecture is unexpected
      */
     public void test() throws SQLException {
-        //Test images table
+        //TODO: Modify test to test database and make updates if necessary
+
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_IMAGE_PATH + "," + SQL_IMAGE_SOURCE + "," + SQL_IMAGE_RATING + "," + SQL_IMAGE_TIME_ADDED + " FROM " + SQL_IMAGES_TABLE);
-
-        //Test tags table
         statement.executeQuery("SELECT TOP 1 " + SQL_TAG_ID + "," + SQL_TAG_NAME + " FROM " + SQL_TAGS_TABLE);
-
-        //Test image_tagged table
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_TAG_ID + " FROM " + SQL_IMAGE_TAGGED_TABLE);
-
-        //Test comics table
         statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_COMIC_NAME + "," + SQL_COMIC_SOURCE + "," + SQL_COMIC_TIME_ADDED + " FROM " + SQL_COMICS_TABLE);
-
-        //Test comic_tagged table
         statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + "," + SQL_TAG_ID + " FROM " + SQL_COMIC_TAGGED_TABLE);
-
-        //Test comic_pages table
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_COMIC_ID + "," + SQL_COMIC_PAGES_PAGENUM + " FROM " + SQL_COMIC_PAGES_TABLE);
     }
 
     public int commitChanges() throws SQLException {
         int deletes = 0, inserts = 0, changes = 0;
         StringBuilder queryBuilder = new StringBuilder();
+
+        //TODO: Make tag cache changes batched
 
         Iterator<ImageInfo> imageIter = imageInfos.listIterator();
         while (imageIter.hasNext()) {
@@ -290,6 +300,8 @@ public class ImageDatabase {
                 buildImageUpdateQuery(queryBuilder, image);
                 changes++;
             }
+
+            //TODO: Make tag modifications batched
 
             image.setAsUpdated();
         }
@@ -313,6 +325,8 @@ public class ImageDatabase {
                 buildComicUpdateQuery(queryBuilder, comic);
                 changes++;
             }
+
+            //TODO: Make tag modifications batched
 
             comic.setAsUpdated();
         }

@@ -7,7 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
@@ -44,7 +44,7 @@ public class DatabaseImageGridPane extends GridPane {
 
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
-        MenuItem[] items = new MenuItem[8];
+        MenuItem[] items = new MenuItem[10];
         items[0] = new MenuItem("Edit");
         items[0].setOnAction(event -> {
             if (selected.size() == 1) {
@@ -63,13 +63,13 @@ public class DatabaseImageGridPane extends GridPane {
         MenuItem r1 = new MenuItem("★");
         r1.setOnAction(event -> setSelectedRating((byte) 1));
         MenuItem r2 = new MenuItem("★★");
-        r1.setOnAction(event -> setSelectedRating((byte) 2));
+        r2.setOnAction(event -> setSelectedRating((byte) 2));
         MenuItem r3 = new MenuItem("★★★");
-        r1.setOnAction(event -> setSelectedRating((byte) 3));
+        r3.setOnAction(event -> setSelectedRating((byte) 3));
         MenuItem r4 = new MenuItem("★★★★");
-        r1.setOnAction(event -> setSelectedRating((byte) 4));
+        r4.setOnAction(event -> setSelectedRating((byte) 4));
         MenuItem r5 = new MenuItem("★★★★★");
-        r1.setOnAction(event -> setSelectedRating((byte) 5));
+        r5.setOnAction(event -> setSelectedRating((byte) 5));
         ((Menu) items[2]).getItems().addAll(r1, r2, r3, r4, r5);
 
         items[3] = new SeparatorMenuItem();
@@ -99,32 +99,14 @@ public class DatabaseImageGridPane extends GridPane {
         items[6] = new SeparatorMenuItem();
 
         items[7] = new MenuItem("Remove");
-        items[7].setOnAction(event -> deleteSelected());
+        items[7].setOnAction(event -> removeSelected());
+
+        items[8] = new SeparatorMenuItem();
+
+        items[9] = new MenuItem("Delete File");
+        items[9].setOnAction(event -> deleteSelected());
 
         contextMenu = new ContextMenu(items);
-
-        //------------------ Listeners ---------------------------------------------------------------------------------
-
-        setOnMouseClicked(event -> clearSelected()); //TODO: Make this actually work; event is never fired
-        setOnScroll(event -> updateVisibleThumbnails());
-        setOnKeyTyped(event -> {
-            if (event.getCode().isArrowKey()) {
-                int index = 0;
-                if (getLastSelected() != null) index = imageViews.indexOf(getLastSelected());
-                else if (getFirstSelected() != null) index = imageViews.indexOf(getFirstSelected());
-
-                if (event.getCode() == KeyCode.RIGHT) index++;
-                if (event.getCode() == KeyCode.LEFT) index--;
-                if (event.getCode() == KeyCode.DOWN) index += 4;
-                if (event.getCode() == KeyCode.UP) index -= 4;
-
-                if (index < 0) index = 0;
-                if (index >= getCount()) index = getCount() - 1;
-
-                select(imageViews.get(index), event.isShiftDown(), event.isControlDown());
-            }
-        }); //TODO: Find where key events are actually fired
-        //TODO: Extract listeners to controller
 
         //----------------- Setup database -----------------------------------------------------------------------------
 
@@ -166,7 +148,11 @@ public class DatabaseImageGridPane extends GridPane {
     }
 
     private GridImageView getLastSelected() {
-        return selected.get(selected.size() - 1);
+        if (!selected.isEmpty()) {
+            return selected.get(selected.size() - 1);
+        } else {
+            return null;
+        }
     }
 
     private List<GridImageView> getViewsInRange(int start, int end) {
@@ -193,6 +179,13 @@ public class DatabaseImageGridPane extends GridPane {
         return db;
     }
 
+    private int getCurrentSelectedIndex() {
+        int index = 0;
+        if (getLastSelected() != null) index = imageViews.indexOf(getLastSelected());
+        else if (getFirstSelected() != null) index = imageViews.indexOf(getFirstSelected());
+        return index;
+    }
+
     //------------------ Setters ---------------------------------------------------------------------------------------
 
     void setPreviewListener(PreviewListener previewListener) {
@@ -213,6 +206,12 @@ public class DatabaseImageGridPane extends GridPane {
         }
     }
 
+    //---------------------- Checkers ----------------------------------------------------------------------------------
+
+    boolean areAllSelected() {
+        return selected.containsAll(imageViews);
+    }
+
     //------------------ Operators -------------------------------------------------------------------------------------
 
     private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
@@ -229,25 +228,65 @@ public class DatabaseImageGridPane extends GridPane {
                 selected.remove(view);
             }
         } else {
+            boolean reselect = true;
+            if (selected.size() == 1 && view.isSelected()) reselect = false;
+
             selected.clear();
 
-            if (!view.isSelected()) {
-                selected.add(view);
-            }
+            if (reselect) selected.add(view);
         }
 
         updateSelected();
     }
 
-    private void clearSelected() {
+    void unselectAll() {
         selected.clear();
         updateSelected();
     }
 
-    private void deleteSelected() {
+    void selectLeft(boolean shiftDown, boolean controlDown) {
+        int index = getCurrentSelectedIndex() - 1;
+
+        if (index >= 0) {
+            select(imageViews.get(index), shiftDown, controlDown);
+        }
+    }
+
+    void selectRight(boolean shiftDown, boolean controlDown) {
+        int index = getCurrentSelectedIndex() + 1;
+
+        if (index < imageViews.size()) {
+            select(imageViews.get(index), shiftDown, controlDown);
+        }
+    }
+
+    void selectDown(boolean shiftDown, boolean controlDown) {
+        int index = getCurrentSelectedIndex() + columnWidth();
+
+        if (index >= imageViews.size()) index = imageViews.size() - 1;
+
+        select(imageViews.get(index), shiftDown, controlDown);
+    }
+
+    void selectUp(boolean shiftDown, boolean controlDown) {
+        int index = getCurrentSelectedIndex() - columnWidth();
+
+        if (index < 0) index = 0;
+
+        select(imageViews.get(index), shiftDown, controlDown);
+    }
+
+    void selectAll() {
+        selected.clear();
+        selected.addAll(imageViews);
+
+        updateSelected();
+    }
+
+    private void removeSelected() {
         if (!selected.isEmpty()) {
             selected.forEach(view -> view.getInfo().setToBeDeleted());
-            clearSelected();
+            unselectAll();
             try {
                 db.commitChanges();
             } catch (SQLException ex) {
@@ -267,6 +306,13 @@ public class DatabaseImageGridPane extends GridPane {
         }
     }
 
+    private void deleteSelected() {
+        selected.forEach(view -> {
+            new File(view.getInfo().getPath()).delete();
+        });
+        removeSelected();
+    }
+
     //------------------------ Updaters --------------------------------------------------------------------------------
 
     private void updateSelected() {
@@ -275,9 +321,11 @@ public class DatabaseImageGridPane extends GridPane {
         }
     }
 
-    private void updateVisibleThumbnails() {
+    void updateVisibleThumbnails() {
         ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
         Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
+
+        //TODO: Make this actually work
 
         for (GridImageView n : imageViews) {
             Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
@@ -308,7 +356,7 @@ public class DatabaseImageGridPane extends GridPane {
             }
 
             for (int k = i; k < imageViews.size(); k++) {
-                GridImageView view = imageViews.remove(imageViews.size()-1);
+                GridImageView view = imageViews.remove(imageViews.size() - 1);
                 getChildren().remove(view);
             }
         } catch (SQLException ex) {
@@ -321,7 +369,11 @@ public class DatabaseImageGridPane extends GridPane {
         if (image != null) view.loadThumbnail(true);
         view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
         view.setOnMouseClicked(event -> {
-            if (event.isPrimaryButtonDown() || !view.isSelected()) select(view, event.isShiftDown(), event.isControlDown());
+            if (event.getButton() == MouseButton.PRIMARY || !view.isSelected()) {
+                select(view, event.isShiftDown(), event.isControlDown());
+            }
+
+            event.consume();
         });
         view.setOnMouseEntered(event -> {
             if (previewListener != null) previewListener.preview(view.getInfo());

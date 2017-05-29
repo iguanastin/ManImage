@@ -5,7 +5,10 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -19,7 +22,6 @@ import java.util.List;
 
 public class MainController {
 
-    public Stage stage;
 
     public DynamicImageView previewDynamicImageView;
     public Label previewTagsLabel;
@@ -28,6 +30,7 @@ public class MainController {
     public DatabaseImageGridPane grid;
 
     private File lastFolder;
+    private Stage stage;
 
 
     //---------------------- Initializers ------------------------------------------------------------------------------
@@ -84,7 +87,7 @@ public class MainController {
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
-            getImagesFiles(folder, false).forEach(db::queueCreateImage);
+            getImageFiles(folder, false).forEach(db::queueCreateImage);
 
             try {
                 db.commitChanges();
@@ -104,7 +107,7 @@ public class MainController {
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
-            getImagesFiles(folder, true).forEach(db::queueCreateImage);
+            getImageFiles(folder, true).forEach(db::queueCreateImage);
 
             try {
                 db.commitChanges();
@@ -124,17 +127,37 @@ public class MainController {
 
     }
 
-    public void gridMouseClicked(MouseEvent event) {
-
+    public void gridScrollPaneClicked(MouseEvent event) {
+        grid.unselectAll();
     }
 
-    public void gridScrollPaneClicked(MouseEvent event) {
-        System.out.println("TEST"); //TODO: See if this catches clicking on the scrollpane
+    public void gridScrollPaneKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.LEFT) {
+            grid.selectLeft(event.isShiftDown(), event.isControlDown());
+        } else if (event.getCode() == KeyCode.RIGHT) {
+            grid.selectRight(event.isShiftDown(), event.isControlDown());
+        } else if (event.getCode() == KeyCode.DOWN) {
+            grid.selectDown(event.isShiftDown(), event.isControlDown());
+            //TODO: Find out why pressing down at the bottom row causes it to return to the top
+        } else if (event.getCode() == KeyCode.UP) {
+            grid.selectUp(event.isShiftDown(), event.isControlDown());
+        } else if (event.isControlDown() && event.getCode() == KeyCode.A) {
+            if (grid.areAllSelected()) {
+                grid.unselectAll();
+            } else {
+                grid.selectAll();
+            }
+        }
+        event.consume();
+    }
+
+    public void gridScrollPaneScrolled(ScrollEvent event) {
+        grid.updateVisibleThumbnails();
     }
 
     //--------------------- Getters ------------------------------------------------------------------------------------
 
-    private ArrayList<String> getImagesFiles(File folder, boolean recurse) {
+    private ArrayList<String> getImageFiles(File folder, boolean recurse) {
         final ArrayList<String> results = new ArrayList<>();
         final File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
 
@@ -143,7 +166,7 @@ public class MainController {
                 if (file.isFile()) {
                     results.add(file.getAbsolutePath());
                 } else if (recurse) {
-                    results.addAll(getImagesFiles(file, true));
+                    results.addAll(getImageFiles(file, true));
                 }
             }
         }
@@ -153,7 +176,7 @@ public class MainController {
 
     //-------------------------- Setters -------------------------------------------------------------------------------
 
-    public void setStage(Stage stage) {
+    void setStage(Stage stage) {
         this.stage = stage;
     }
 
