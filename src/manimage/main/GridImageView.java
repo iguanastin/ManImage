@@ -1,11 +1,10 @@
-package manimage;
+package manimage.main;
 
 
 import javafx.geometry.Insets;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
+import manimage.common.ImageInfo;
 
 public class GridImageView extends BorderPane {
 
@@ -15,7 +14,7 @@ public class GridImageView extends BorderPane {
 
     private boolean selected = false;
 
-    private static final String selectedBackgroundColor = "88AADD";
+    private static final String selectedBackgroundColor = "5588AA";
     private static final String backgroundColor = "DDDDDD";
 
 
@@ -24,13 +23,14 @@ public class GridImageView extends BorderPane {
 
         setCenter(view = new DynamicImageView());
         setMargin(view, new Insets(5));
-        setMinSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
-        setMaxSize(ImageInfo.thumbnailSize, ImageInfo.thumbnailSize);
+        setMinSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
+        setMaxSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
 
-        setOnMouseEntered(event -> Main.controller.preview(getInfo()));
+        setOnMouseEntered(event -> Main.mainController.preview(getInfo()));
         setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) setSelected(!isSelected());
+            if (event.getButton() == MouseButton.PRIMARY) Main.mainController.grid.select(this, event.isShiftDown(), event.isControlDown());
         });
+        view.setOnMouseClicked(getOnMouseClicked());
 
         setSelected(false);
     }
@@ -39,13 +39,16 @@ public class GridImageView extends BorderPane {
         return info;
     }
 
+    void setInfo(ImageInfo info) {
+        this.info = info;
+    }
+
     void loadThumbnail(boolean backgroundLoading) {
         view.setImage(info.getThumbnail(backgroundLoading));
     }
 
     void unloadThumbnail() {
         view.setImage(null);
-        info.unloadThumbnail();
     }
 
     boolean isThumbnailLoaded() {

@@ -1,4 +1,4 @@
-package manimage;
+package manimage.main;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -7,44 +7,54 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import manimage.common.ImageInfo;
+import manimage.common.ImageDatabase;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 
-public class Controller {
+public class MainController {
 
     public DynamicImageView previewDynamicImageView;
-
     public DynamicImageGridPane grid;
     public Label previewTagsLabel;
-    private ImageInfo currentPreview;
+
+    //TODO: Clean up C style handling
 
     private File lastFolder;
 
+
     @FXML
     public void initialize() {
-
+        grid.updateView();
     }
 
     void preview(ImageInfo info) {
-        if (currentPreview != null) currentPreview.unloadImage();
-        currentPreview = info;
-
         previewDynamicImageView.setImage(info.getImage(true));
-        previewTagsLabel.setText(info.getTags().toString());
+//        previewTagsLabel.setText(info.getTags().toString());
+        //TODO: Fix tag label
     }
 
-    public void addFileClicked(ActionEvent event) {
+    public void addFilesClicked(ActionEvent event) {
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
         fc.setInitialDirectory(lastFolder);
         List<File> files = fc.showOpenMultipleDialog(Main.mainStage);
 
-        if (files == null || files.isEmpty()) {
-            //Canceled
-        } else {
-            grid.addAll(files.toArray(new File[files.size()]), false);
+        if (files != null) {
+            ImageDatabase db = grid.getImageDatabase();
+
+            try {
+                files.forEach(file -> {
+                    if (Main.IMAGE_FILTER.accept(file)) db.queueCreateImage(file.getAbsolutePath());
+                });
+
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
 
             lastFolder = files.get(0).getParentFile();
         }
@@ -56,12 +66,32 @@ public class Controller {
         dc.setInitialDirectory(lastFolder);
         File folder = dc.showDialog(Main.mainStage);
 
-        if (folder == null) {
-            //Canceled
-        } else {
-            grid.add(folder, false);
+        if (folder != null) {
+            insertImagesIntoDatabase(folder, false);
 
             lastFolder = folder.getParentFile();
+        }
+    }
+
+    private void insertImagesIntoDatabase(File folder, boolean recurse) {
+        File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
+        if (files != null) {
+            ImageDatabase db = grid.getImageDatabase();
+
+            try {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        db.queueCreateImage(file.getAbsolutePath());
+                    } else if (recurse) {
+                        insertImagesIntoDatabase(file, true);
+                    }
+                }
+
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+
         }
     }
 
@@ -71,10 +101,8 @@ public class Controller {
         dc.setInitialDirectory(lastFolder);
         File folder = dc.showDialog(Main.mainStage);
 
-        if (folder == null) {
-            //Canceled
-        } else {
-            grid.add(folder, true);
+        if (folder != null) {
+            insertImagesIntoDatabase(folder, true);
 
             lastFolder = folder.getParentFile();
         }
