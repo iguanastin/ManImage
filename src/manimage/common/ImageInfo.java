@@ -28,6 +28,8 @@ public class ImageInfo {
 
     public static final int THUMBNAIL_SIZE = 140;
 
+    //TODO: Extract superclass from this and ComicInfo
+
 
     public ImageInfo(int id, String path, String source, byte rating, long timeAdded) {
         this.id = id;
@@ -154,6 +156,10 @@ public class ImageInfo {
         else result += "Not Synchronized";
 
         return result;
+    }
+
+    public ArrayList<Tag> getTags() {
+        return tags;
     }
 
     //------------- Setters --------------------------------------------------------------------------------------------

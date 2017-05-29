@@ -25,7 +25,7 @@ public class MainController {
     public Label previewTagsLabel;
 
     public ScrollPane gridScrollPane;
-    public DynamicImageGridPane grid;
+    public DatabaseImageGridPane grid;
 
     private File lastFolder;
 
@@ -42,7 +42,12 @@ public class MainController {
 
     private void preview(ImageInfo info) {
         previewDynamicImageView.setImage(info.getImage(true));
-        //TODO: Fix tag label
+        try {
+            grid.getImageDatabase().loadTags(info);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        previewTagsLabel.setText(info.getTags().toString());
     }
 
     //-------------------- Listeners -----------------------------------------------------------------------------------

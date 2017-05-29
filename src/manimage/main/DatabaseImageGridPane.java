@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class DynamicImageGridPane extends GridPane {
+public class DatabaseImageGridPane extends GridPane {
 
     private final ArrayList<GridImageView> imageViews = new ArrayList<>();
     private final ArrayList<GridImageView> selected = new ArrayList<>();
@@ -40,7 +40,7 @@ public class DynamicImageGridPane extends GridPane {
 
     //----------------- Constructors -----------------------------------------------------------------------------------
 
-    public DynamicImageGridPane() {
+    public DatabaseImageGridPane() {
 
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
@@ -124,11 +124,13 @@ public class DynamicImageGridPane extends GridPane {
                 select(imageViews.get(index), event.isShiftDown(), event.isControlDown());
             }
         }); //TODO: Find where key events are actually fired
+        //TODO: Extract listeners to controller
 
         //----------------- Setup database -----------------------------------------------------------------------------
 
         try {
             db = new ImageDatabase("C:\\Users\\Austin\\h2db", "sa", "sa", false);
+            //TODO: Make database startup modular
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -294,22 +296,7 @@ public class DynamicImageGridPane extends GridPane {
             int i = 0;
             for (ImageInfo image : images) {
                 if (i >= imageViews.size()) {
-                    GridImageView view = new GridImageView(image);
-                    view.loadThumbnail(true);
-                    view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
-                    view.setOnMouseClicked(event -> {
-                        if (event.isPrimaryButtonDown() || !view.isSelected()) select(view, event.isShiftDown(), event.isControlDown());
-                    });
-                    view.setOnMouseEntered(event -> {
-                        if (previewListener != null) previewListener.preview(view.getInfo());
-                    });
-                    imageViews.add(view);
-
-                    //Add new row if not enough present
-                    if (getRowConstraints().size() <= i / columnWidth())
-                        getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
-
-                    add(view, i % columnWidth(), i / columnWidth());
+                    createNewGridView(i, image);
                 } else {
                     GridImageView view = imageViews.get(i);
 
@@ -327,6 +314,25 @@ public class DynamicImageGridPane extends GridPane {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private void createNewGridView(int index, ImageInfo image) {
+        GridImageView view = new GridImageView(image);
+        if (image != null) view.loadThumbnail(true);
+        view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
+        view.setOnMouseClicked(event -> {
+            if (event.isPrimaryButtonDown() || !view.isSelected()) select(view, event.isShiftDown(), event.isControlDown());
+        });
+        view.setOnMouseEntered(event -> {
+            if (previewListener != null) previewListener.preview(view.getInfo());
+        });
+        imageViews.add(view);
+
+        //Add new row if not enough present
+        if (getRowConstraints().size() <= index / columnWidth())
+            getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
+
+        add(view, index % columnWidth(), index / columnWidth());
     }
 
 }
