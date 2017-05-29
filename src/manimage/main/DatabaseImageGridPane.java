@@ -325,7 +325,7 @@ public class DatabaseImageGridPane extends GridPane {
         ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
         Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
 
-        //TODO: Make this actually work
+        //TODO: Make this actually work or just delete it and make pages smaller
 
         for (GridImageView n : imageViews) {
             Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());

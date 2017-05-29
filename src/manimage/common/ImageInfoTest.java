@@ -3,26 +3,24 @@ package manimage.common;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class ImageInfoTest {
 
     @Test
     void isChanged() {
         ImageInfo image = new ImageInfo(1, "path");
-        Assertions.assertFalse(image.isChanged());
+        Assertions.assertFalse(image.isModified());
         image.setPath("newpath");
-        Assertions.assertTrue(image.isChanged());
-        image.setAsUpdated();
-        Assertions.assertFalse(image.isChanged());
+        Assertions.assertTrue(image.isModified());
+        image.markAsCommitted();
+        Assertions.assertFalse(image.isModified());
         image.setSource("newsource");
-        Assertions.assertTrue(image.isChanged());
-        image.setAsUpdated();
-        Assertions.assertFalse(image.isChanged());
+        Assertions.assertTrue(image.isModified());
+        image.markAsCommitted();
+        Assertions.assertFalse(image.isModified());
         image.setRating((byte) 2);
-        Assertions.assertTrue(image.isChanged());
-        image.setAsUpdated();
-        Assertions.assertFalse(image.isChanged());
+        Assertions.assertTrue(image.isModified());
+        image.markAsCommitted();
+        Assertions.assertFalse(image.isModified());
 
     }
 
@@ -32,7 +30,7 @@ class ImageInfoTest {
         Assertions.assertFalse(image.isPathChanged());
         image.setPath("newpath");
         Assertions.assertTrue(image.isPathChanged());
-        image.setAsUpdated();
+        image.markAsCommitted();
 
         image.setPath("newpath");
         Assertions.assertFalse(image.isPathChanged());
@@ -44,7 +42,7 @@ class ImageInfoTest {
         Assertions.assertFalse(image.isRatingChanged());
         image.setRating((byte) 2);
         Assertions.assertTrue(image.isRatingChanged());
-        image.setAsUpdated();
+        image.markAsCommitted();
 
         image.setRating((byte) 2);
         Assertions.assertFalse(image.isRatingChanged());
@@ -56,7 +54,7 @@ class ImageInfoTest {
         Assertions.assertFalse(image.isSourceChanged());
         image.setSource("newsource");
         Assertions.assertTrue(image.isSourceChanged());
-        image.setAsUpdated();
+        image.markAsCommitted();
 
         image.setSource("newsource");
         Assertions.assertFalse(image.isSourceChanged());
@@ -68,8 +66,8 @@ class ImageInfoTest {
         image.setPath("newpath");
         image.setSource("newsource");
         image.setRating((byte) 2);
-        image.setAsUpdated();
-        Assertions.assertFalse(image.isChanged());
+        image.markAsCommitted();
+        Assertions.assertFalse(image.isModified());
     }
 
 }

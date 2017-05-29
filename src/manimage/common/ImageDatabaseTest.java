@@ -165,9 +165,9 @@ class ImageDatabaseTest {
         try {
             ComicInfo[] created = db.queueCreateComics("c1", "c2", "c3", "c4", "c5");
             db.commitChanges();
-            created[0].setToBeDeleted(true);
-            created[1].setToBeDeleted(true);
-            created[2].setToBeDeleted(true);
+            created[0].setToBeDeleted();
+            created[1].setToBeDeleted();
+            created[2].setToBeDeleted();
             Assertions.assertTrue(created[0].isToBeDeleted());
             Assertions.assertTrue(created[1].isToBeDeleted());
             Assertions.assertTrue(created[2].isToBeDeleted());

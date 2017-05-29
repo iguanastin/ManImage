@@ -276,7 +276,7 @@ public class ImageDatabase {
     }
 
     public int commitChanges() throws SQLException {
-        int deletes = 0, inserts = 0, changes = 0;
+        int updates = 0;
         StringBuilder queryBuilder = new StringBuilder();
 
         //TODO: Make tag cache changes batched
@@ -284,159 +284,31 @@ public class ImageDatabase {
         Iterator<ImageInfo> imageIter = imageInfos.listIterator();
         while (imageIter.hasNext()) {
             ImageInfo image = imageIter.next();
-            if (image.isToBeDeleted()) {
-                if (image.isInserted()) {
-                    buildImageDeleteQuery(queryBuilder, image);
-                    image.setInserted(false);
-                }
-
-                imageIter.remove();
-                deletes++;
-            } else if (image.isToBeInserted() && !image.isInserted()) {
-                buildImageInsertQuery(queryBuilder, image);
-                image.setInserted(true);
-                inserts++;
-            } else if (image.isChanged() && image.isInserted()) {
-                buildImageUpdateQuery(queryBuilder, image);
-                changes++;
+            if (!image.isSynchronized()) {
+                updates += image.buildSQLUpdate(queryBuilder);
             }
 
-            //TODO: Make tag modifications batched
-
-            image.setAsUpdated();
+            if (image.isToBeDeleted()) imageIter.remove();
+            image.markAsCommitted();
         }
 
         Iterator<ComicInfo> comicIter = comicInfos.listIterator();
         while (comicIter.hasNext()) {
             ComicInfo comic = comicIter.next();
-            if (comic.isToBeDeleted()) {
-                if (comic.isInserted()) {
-                    buildComicDeleteQuery(queryBuilder, comic);
-                    comic.setInserted(false);
-                }
-
-                comicIter.remove();
-                deletes++;
-            } else if (comic.isToBeInserted()) {
-                buildComicInsertQuery(queryBuilder, comic);
-                comic.setInserted(true);
-                inserts++;
-            } else if (comic.isChanged()) {
-                buildComicUpdateQuery(queryBuilder, comic);
-                changes++;
+            if (!comic.isSynchronized()) {
+                updates += comic.buildSQLUpdate(queryBuilder);
             }
 
-            //TODO: Make tag modifications batched
-
-            comic.setAsUpdated();
+            if (comic.isToBeDeleted()) comicIter.remove();
+            comic.markAsCommitted();
         }
 
-        final int updates = deletes + inserts + changes;
-
-        System.out.println("DBUpdate (" + updates + "): " + deletes + " deletes, " + inserts + " inserts, " + changes + " changes");
+        System.out.println("DBUpdates: " + updates);
 
         statement.executeUpdate(queryBuilder.toString());
 
         if (updates > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
         return updates;
-    }
-
-    private void buildImageDeleteQuery(StringBuilder sb, ImageInfo image) {
-        sb.append("DELETE FROM ").append(SQL_IMAGES_TABLE).append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
-    }
-
-    private void buildComicDeleteQuery(StringBuilder sb, ComicInfo comic) {
-        sb.append("DELETE FROM ").append(SQL_COMICS_TABLE).append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
-    }
-
-    private void buildComicUpdateQuery(StringBuilder sb, ComicInfo comic) {
-        boolean commaNeeded = false;
-
-        sb.append("UPDATE ").append(SQL_COMICS_TABLE).append(" SET ");
-
-        if (comic.isNameChanged()) {
-            sb.append(SQL_COMIC_NAME).append("='").append(comic.getName()).append('\'');
-            commaNeeded = true;
-        }
-        if (comic.isSourceChanged()) {
-            if (commaNeeded) sb.append(',');
-            sb.append(SQL_COMIC_SOURCE).append("=");
-            if (comic.getSource() == null) {
-                sb.append("NULL");
-            } else {
-                sb.append('\'').append(comic.getSource()).append('\'');
-            }
-        }
-
-        sb.append(" WHERE ").append(SQL_COMIC_ID).append('=').append(comic.getId()).append(";\n");
-    }
-
-    private void buildImageUpdateQuery(StringBuilder sb, ImageInfo image) {
-        boolean commaNeeded = false;
-
-        sb.append("UPDATE ").append(SQL_IMAGES_TABLE).append(" SET ");
-
-        if (image.isPathChanged()) {
-            sb.append(SQL_IMAGE_PATH).append("=");
-            if (image.getPath() == null) {
-                sb.append("NULL");
-            } else {
-                sb.append('\'').append(image.getSQLFriendlyPath()).append('\'');
-            }
-            commaNeeded = true;
-        }
-        if (image.isSourceChanged()) {
-            if (commaNeeded) sb.append(',');
-            sb.append(SQL_IMAGE_SOURCE).append("=");
-            if (image.getSource() == null) {
-                sb.append("NULL");
-            } else {
-                sb.append('\'').append(image.getSQLFriendlySource()).append('\'');
-            }
-            commaNeeded = true;
-        }
-        if (image.isRatingChanged()) {
-            if (commaNeeded) sb.append(',');
-            sb.append(SQL_IMAGE_RATING).append('=').append(image.getRating());
-        }
-
-        sb.append(" WHERE ").append(SQL_IMAGE_ID).append('=').append(image.getId()).append(";\n");
-    }
-
-    private void buildImageInsertQuery(StringBuilder sb, ImageInfo image) {
-        sb.append("INSERT INTO ").append(SQL_IMAGES_TABLE).append(" VALUES (").append(image.getId()).append(',');
-
-        if (image.getPath() == null) {
-            sb.append("NULL,");
-        } else {
-            sb.append('\'').append(image.getSQLFriendlyPath()).append("',");
-        }
-
-        if (image.getSource() == null) {
-            sb.append("NULL,");
-        } else {
-            sb.append('\'').append(image.getSQLFriendlySource()).append("',");
-        }
-
-        sb.append(image.getRating()).append(",").append(image.getTimeAdded()).append(");\n");
-
-        //Tag with 'tagme'
-        sb.append("INSERT INTO ").append(SQL_IMAGE_TAGGED_TABLE).append(" (").append(SQL_IMAGE_ID).append(',').append(SQL_TAG_ID).append(") VALUES (").append(image.getId()).append(',').append(TAGME_TAG_ID).append(");\n");
-    }
-
-    private void buildComicInsertQuery(StringBuilder sb, ComicInfo comic) {
-        sb.append("INSERT INTO ").append(SQL_COMICS_TABLE).append(" VALUES (").append(comic.getId()).append(",'").append(comic.getName()).append("',");
-
-        if (comic.getSource() == null) {
-            sb.append("NULL,");
-        } else {
-            sb.append('\'').append(comic.getSource()).append("',");
-        }
-
-        sb.append(comic.getTimeAdded()).append(");\n");
-
-        //Tag with 'tagme'
-        sb.append("INSERT INTO ").append(SQL_COMIC_TAGGED_TABLE).append(" (").append(SQL_COMIC_ID).append(',').append(SQL_TAG_ID).append(") VALUES (").append(comic.getId()).append(',').append(TAGME_TAG_ID).append(");\n");
     }
 
     public void addChangeListener(ImageDatabaseUpdateListener listener) {

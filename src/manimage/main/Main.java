@@ -18,6 +18,24 @@ public class Main extends Application {
     static final FileFilter IMAGE_AND_DIRECTORY_FILTER = file -> file.isDirectory() || IMAGE_FILTER.accept(file);
     static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
 
+    //TODO: Redesign this GUI entirely
+    /*Things to take into account:
+        Batched editing
+        Quick previews
+        Complex searches
+        Limited space
+        Modular pieces
+            Duplicate checking
+            Comic reading
+            Mass editor
+            Slideshow
+        Other forms of media?
+            Video
+            Text
+        Inline editors?
+        CSS Styling?
+    */
+
     @Override
     public void start(Stage mainStage) throws Exception {
         //------------ Build main stage --------------------------------------------------------------------------------

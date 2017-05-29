@@ -2,37 +2,28 @@ package manimage.common;
 
 import com.sun.istack.internal.NotNull;
 
-public class ComicInfo {
+public class ComicInfo extends DatabaseInfo {
 
-    private final int id;
     private final long timeAdded;
     private String name;
     private String source;
 
     private boolean nameChanged = false, sourceChanged = false;
-    private boolean inserted = false;
-    private boolean toBeInserted = false;
-    private boolean toBeDeleted = false;
 
 
     public ComicInfo(int id, String name, String source, long timeAdded) {
-        this.id = id;
+        super(id, true);
         this.name = name;
         this.source = source;
         this.timeAdded = timeAdded;
-        inserted = true;
-        toBeInserted = false;
-        toBeDeleted = false;
     }
 
     public ComicInfo(int id, String name) {
-        this.id = id;
+        super(id, false);
         this.name = name;
         this.source = null;
         this.timeAdded = System.currentTimeMillis();
-        inserted = false;
-        toBeInserted = true;
-        toBeDeleted = false;
+        setToBeInserted();
     }
 
     //--------------- Getters ------------------------------------------------------------------------------------------
@@ -41,23 +32,58 @@ public class ComicInfo {
         return source;
     }
 
-    public int getId() {
-        return id;
+    public String getSQLSafeSource() {
+        if (source == null) {
+            return null;
+        } else {
+            return '\'' + source.replace("'", "''") + '\'';
+        }
     }
 
     public String getName() {
         return name;
     }
 
+    public String getSQLSafeName() {
+        if (name == null) {
+            return null;
+        } else {
+            return '\'' + name.replace("'", "''") + '\'';
+        }
+    }
+
     public long getTimeAdded() {
         return timeAdded;
     }
 
-    //------------------ Checkers --------------------------------------------------------------------------------------
+    @Override
+    public int buildSQLUpdate(StringBuilder query) {
+        if (isSynchronized()) return 0;
 
-    public boolean isChanged() {
-        return nameChanged || sourceChanged;
+        if (isToBeDeleted()) {
+            query.append("DELETE FROM ").append(ImageDatabase.SQL_COMICS_TABLE).append(" WHERE ").append(ImageDatabase.SQL_COMIC_ID).append('=').append(getId()).append(";\n");
+        } else if (isToBeInserted()) {
+            query.append("INSERT INTO ").append(ImageDatabase.SQL_COMICS_TABLE).append(" (").append(ImageDatabase.SQL_COMIC_ID).append(',').append(ImageDatabase.SQL_COMIC_NAME).append(',');
+            query.append(ImageDatabase.SQL_COMIC_SOURCE).append(',').append(ImageDatabase.SQL_COMIC_TIME_ADDED).append(") VALUES (").append(getId()).append(',').append(getSQLSafeName()).append(',');
+            query.append(getSQLSafeSource()).append(',').append(getTimeAdded()).append(");\n");
+        } else if (isModified()) {
+            query.append("UPDATE ").append(ImageDatabase.SQL_COMICS_TABLE).append(" SET ");
+            boolean comma = false;
+            if (isNameChanged()) {
+                query.append(ImageDatabase.SQL_COMIC_NAME).append('=').append(getSQLSafeName());
+                comma = true;
+            }
+            if (isSourceChanged()) {
+                if (comma) query.append(',');
+                query.append(ImageDatabase.SQL_COMIC_SOURCE).append('=').append(getSQLSafeSource());
+            }
+            query.append(" WHERE ").append(ImageDatabase.SQL_COMIC_ID).append('=').append(getId()).append(";\n");
+        }
+
+        return 1;
     }
+
+    //------------------ Checkers --------------------------------------------------------------------------------------
 
     public boolean isNameChanged() {
         return nameChanged;
@@ -67,16 +93,8 @@ public class ComicInfo {
         return sourceChanged;
     }
 
-    public boolean isInserted() {
-        return inserted;
-    }
-
-    public boolean isToBeInserted() {
-        return toBeInserted;
-    }
-
-    public boolean isToBeDeleted() {
-        return toBeDeleted;
+    boolean isModified() {
+        return nameChanged || sourceChanged;
     }
 
     //---------------------- Setters -----------------------------------------------------------------------------------
@@ -93,20 +111,10 @@ public class ComicInfo {
         this.name = name;
     }
 
-    public void setAsUpdated() {
-        nameChanged = sourceChanged = toBeDeleted = toBeInserted = false;
-    }
-
-    public void setInserted(boolean b) {
-        inserted = b;
-    }
-
-    public void setToBeInserted(boolean toBeInserted) {
-        this.toBeInserted = toBeInserted;
-    }
-
-    public void setToBeDeleted(boolean toBeDeleted) {
-        this.toBeDeleted = toBeDeleted;
+    @Override
+    public synchronized void markAsCommitted() {
+        super.markAsCommitted();
+        sourceChanged = nameChanged = false;
     }
 
 }
