@@ -67,22 +67,31 @@ public class MainController {
         File folder = dc.showDialog(Main.mainStage);
 
         if (folder != null) {
-            File[] imageFiles = folder.listFiles(Main.IMAGE_FILTER);
-            if (imageFiles != null) {
-                ImageDatabase db = grid.getImageDatabase();
+            insertImagesIntoDatabase(folder, false);
 
-                try {
-                    for (File imageFile : imageFiles) {
-                        db.queueCreateImage(imageFile.getAbsolutePath());
+            lastFolder = folder.getParentFile();
+        }
+    }
+
+    private void insertImagesIntoDatabase(File folder, boolean recurse) {
+        File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
+        if (files != null) {
+            ImageDatabase db = grid.getImageDatabase();
+
+            try {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        db.queueCreateImage(file.getAbsolutePath());
+                    } else if (recurse) {
+                        insertImagesIntoDatabase(file, true);
                     }
-
-                    db.commitChanges();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
                 }
 
-                lastFolder = folder.getParentFile();
+                db.commitChanges();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
+
         }
     }
 
@@ -92,10 +101,8 @@ public class MainController {
         dc.setInitialDirectory(lastFolder);
         File folder = dc.showDialog(Main.mainStage);
 
-        if (folder == null) {
-            //Canceled
-        } else {
-            //TODO: Implement
+        if (folder != null) {
+            insertImagesIntoDatabase(folder, true);
 
             lastFolder = folder.getParentFile();
         }
