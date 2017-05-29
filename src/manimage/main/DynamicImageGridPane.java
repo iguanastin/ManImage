@@ -29,14 +29,13 @@ public class DynamicImageGridPane extends GridPane {
 
     private final ContextMenu contextMenu;
 
-    private String orderByPrimary = ImageDatabase.SQL_IMAGE_TIME_ADDED;
-    private String orderBySecondary = ImageDatabase.SQL_IMAGE_ID;
-    private boolean descendingPrimary = true;
-    private boolean descendingSecondary = true;
+    private String orderBy = ImageDatabase.SQL_IMAGE_TIME_ADDED + " DESC, " + ImageDatabase.SQL_IMAGE_ID + " DESC";
     private int pageLength = 100;
     private int pageNum = 0;
 
     private ImageDatabase db;
+
+    private PreviewListener previewListener;
 
 
     //----------------- Constructors -----------------------------------------------------------------------------------
@@ -49,7 +48,7 @@ public class DynamicImageGridPane extends GridPane {
         items[0] = new MenuItem("Edit");
         items[0].setOnAction(event -> {
             if (selected.size() == 1) {
-                Main.MAIN.openSingleEditor();
+//                Main.MAIN.openSingleEditor();
                 //TODO: Implement single-image editor
             } else if (selected.size() > 1) {
                 //TODO: Create multi-image editor
@@ -188,13 +187,33 @@ public class DynamicImageGridPane extends GridPane {
         return result;
     }
 
-    public ImageDatabase getImageDatabase() {
+    ImageDatabase getImageDatabase() {
         return db;
+    }
+
+    //------------------ Setters ---------------------------------------------------------------------------------------
+
+    void setPreviewListener(PreviewListener previewListener) {
+        this.previewListener = previewListener;
+    }
+
+    void setPageNum(int pageNum) {
+        if (this.pageNum != pageNum) {
+            this.pageNum = pageNum;
+            updateView();
+        }
+    }
+
+    void setPageLength(int pageLength) {
+        if (this.pageLength != pageLength) {
+            this.pageLength = pageLength;
+            updateView();
+        }
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    public void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
+    private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
             selected.clear();
         } else if (shiftDown && !selected.isEmpty()) {
@@ -267,13 +286,9 @@ public class DynamicImageGridPane extends GridPane {
         }
     }
 
-    public void updateView() {
+    void updateView() {
         try {
-            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderByPrimary;
-            if (descendingPrimary) query += " DESC";
-            query += ", " + orderBySecondary;
-            if (descendingSecondary) query += " DESC";
-            query += " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
+            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy + " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
             ArrayList<ImageInfo> images = db.getImages(query);
 
             int i = 0;
@@ -284,6 +299,9 @@ public class DynamicImageGridPane extends GridPane {
                     view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
                     view.setOnMouseClicked(event -> {
                         if (event.isPrimaryButtonDown() || !view.isSelected()) select(view, event.isShiftDown(), event.isControlDown());
+                    });
+                    view.setOnMouseEntered(event -> {
+                        if (previewListener != null) previewListener.preview(view.getInfo());
                     });
                     imageViews.add(view);
 

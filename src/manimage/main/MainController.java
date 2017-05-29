@@ -8,6 +8,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import manimage.common.ImageInfo;
 import manimage.common.ImageDatabase;
 
@@ -18,12 +19,13 @@ import java.util.List;
 
 public class MainController {
 
-    public DynamicImageView previewDynamicImageView;
-    public DynamicImageGridPane grid;
-    public Label previewTagsLabel;
-    public ScrollPane gridScrollPane;
+    public Stage stage;
 
-    //TODO: Clean up C style handling
+    public DynamicImageView previewDynamicImageView;
+    public Label previewTagsLabel;
+
+    public ScrollPane gridScrollPane;
+    public DynamicImageGridPane grid;
 
     private File lastFolder;
 
@@ -33,11 +35,12 @@ public class MainController {
     @FXML
     public void initialize() {
         grid.updateView();
+        grid.setPreviewListener(this::preview);
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    void preview(ImageInfo info) {
+    private void preview(ImageInfo info) {
         previewDynamicImageView.setImage(info.getImage(true));
         //TODO: Fix tag label
     }
@@ -49,7 +52,7 @@ public class MainController {
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
         fc.setInitialDirectory(lastFolder);
-        List<File> files = fc.showOpenMultipleDialog(Main.mainStage);
+        List<File> files = fc.showOpenMultipleDialog(stage);
 
         if (files != null) {
             ImageDatabase db = grid.getImageDatabase();
@@ -72,7 +75,7 @@ public class MainController {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder");
         dc.setInitialDirectory(lastFolder);
-        File folder = dc.showDialog(Main.mainStage);
+        File folder = dc.showDialog(stage);
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
@@ -92,7 +95,7 @@ public class MainController {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder and all subfolders");
         dc.setInitialDirectory(lastFolder);
-        File folder = dc.showDialog(Main.mainStage);
+        File folder = dc.showDialog(stage);
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
@@ -141,6 +144,12 @@ public class MainController {
         }
 
         return results;
+    }
+
+    //-------------------------- Setters -------------------------------------------------------------------------------
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
 }
