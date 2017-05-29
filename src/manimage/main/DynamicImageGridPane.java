@@ -11,14 +11,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import manimage.common.ImageInfo;
 import manimage.common.ImageDatabase;
+import manimage.common.ImageInfo;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -30,8 +31,10 @@ public class DynamicImageGridPane extends GridPane {
 
     private final ContextMenu contextMenu;
 
-    private String orderBy = ImageDatabase.SQL_IMAGE_TIME_ADDED;
-    private boolean descending = true;
+    private String orderByPrimary = ImageDatabase.SQL_IMAGE_TIME_ADDED;
+    private String orderBySecondary = ImageDatabase.SQL_IMAGE_ID;
+    private boolean descendingPrimary = true;
+    private boolean descendingSecondary = true;
     private int pageLength = 100;
     private int pageNum = 0;
 
@@ -219,12 +222,10 @@ public class DynamicImageGridPane extends GridPane {
 
     private void deleteSelected() {
         if (!selected.isEmpty()) {
-            ImageInfo[] images = new ImageInfo[selected.size()];
-            for (int i = 0; i < images.length; i++) images[i] = selected.get(i).getInfo();
-            db.queueDeleteImages(images);
+            selected.forEach(image -> image.getInfo().setToBeDeleted(true));
             try {
                 clearSelected();
-                System.out.println(db.commitChanges());
+                db.commitChanges();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
@@ -254,8 +255,10 @@ public class DynamicImageGridPane extends GridPane {
 
     public void updateView() {
         try {
-            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy;
-            if (descending) query += " DESC";
+            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderByPrimary;
+            if (descendingPrimary) query += " DESC";
+            query += ", " + orderBySecondary;
+            if (descendingSecondary) query += " DESC";
             query += " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
             ArrayList<ImageInfo> images = db.getImages(query);
 

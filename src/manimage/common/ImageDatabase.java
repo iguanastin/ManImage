@@ -3,6 +3,7 @@ package manimage.common;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class ImageDatabase {
 
@@ -204,18 +205,6 @@ public class ImageDatabase {
         return queueCreateComics(name)[0];
     }
 
-    public synchronized void queueDeleteImages(ImageInfo... images) {
-        for (ImageInfo image : images) {
-            image.setToBeDeleted(true);
-        }
-    }
-
-    public synchronized void queueDeleteComics(ComicInfo... comics) {
-        for (ComicInfo comic : comics) {
-            comic.setToBeDeleted(true);
-        }
-    }
-
     public synchronized void clearCachedImages() {
         imageInfos.clear();
     }
@@ -250,47 +239,63 @@ public class ImageDatabase {
     }
 
     public int commitChanges() throws SQLException {
+        int deletes = 0, inserts = 0, changes = 0;
         StringBuilder queryBuilder = new StringBuilder();
 
-        for (ImageInfo image : imageInfos) {
+        Iterator<ImageInfo> imageIter = imageInfos.listIterator();
+        while (imageIter.hasNext()) {
+            ImageInfo image = imageIter.next();
             if (image.isToBeDeleted()) {
                 if (image.isInserted()) {
                     buildImageDeleteQuery(queryBuilder, image);
                     image.setInserted(false);
-                } else {
-                    imageInfos.remove(image);
                 }
+
+                imageIter.remove();
+                deletes++;
             } else if (image.isToBeInserted() && !image.isInserted()) {
                 buildImageInsertQuery(queryBuilder, image);
                 image.setInserted(true);
+                inserts++;
             } else if (image.isChanged() && image.isInserted()) {
                 buildImageUpdateQuery(queryBuilder, image);
+                changes++;
             }
 
             image.setAsUpdated();
         }
-        for (ComicInfo comic : comicInfos) {
+
+        Iterator<ComicInfo> comicIter = comicInfos.listIterator();
+        while (comicIter.hasNext()) {
+            ComicInfo comic = comicIter.next();
             if (comic.isToBeDeleted()) {
                 if (comic.isInserted()) {
                     buildComicDeleteQuery(queryBuilder, comic);
                     comic.setInserted(false);
-                } else {
-                    comicInfos.remove(comic);
                 }
+
+                comicIter.remove();
+                deletes++;
             } else if (comic.isToBeInserted()) {
                 buildComicInsertQuery(queryBuilder, comic);
                 comic.setInserted(true);
+                inserts++;
             } else if (comic.isChanged()) {
                 buildComicUpdateQuery(queryBuilder, comic);
+                changes++;
             }
 
             comic.setAsUpdated();
         }
 
+        final int updates = deletes + inserts + changes;
 
-        final int result = statement.executeUpdate(queryBuilder.toString());
-        if (result > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
-        return result;
+        System.out.println("DBUpdate (" + updates + "): " + deletes + " deletes, " + inserts + " inserts, " + changes + " changes");
+
+        statement.executeUpdate(queryBuilder.toString());
+
+        if (updates > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
+        return updates;
     }
 
     private void buildImageDeleteQuery(StringBuilder sb, ImageInfo image) {
@@ -333,7 +338,7 @@ public class ImageDatabase {
             if (image.getPath() == null) {
                 sb.append("NULL");
             } else {
-                sb.append('\'').append(image.getPath()).append('\'');
+                sb.append('\'').append(image.getSQLFriendlyPath()).append('\'');
             }
             commaNeeded = true;
         }
@@ -343,7 +348,7 @@ public class ImageDatabase {
             if (image.getSource() == null) {
                 sb.append("NULL");
             } else {
-                sb.append('\'').append(image.getSource()).append('\'');
+                sb.append('\'').append(image.getSQLFriendlySource()).append('\'');
             }
             commaNeeded = true;
         }
@@ -361,13 +366,13 @@ public class ImageDatabase {
         if (image.getPath() == null) {
             sb.append("NULL,");
         } else {
-            sb.append('\'').append(image.getPath()).append("',");
+            sb.append('\'').append(image.getSQLFriendlyPath()).append("',");
         }
 
         if (image.getSource() == null) {
             sb.append("NULL,");
         } else {
-            sb.append('\'').append(image.getSource()).append("',");
+            sb.append('\'').append(image.getSQLFriendlySource()).append("',");
         }
 
         sb.append(image.getRating()).append(",").append(image.getTimeAdded()).append(");\n");

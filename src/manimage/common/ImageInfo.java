@@ -116,8 +116,24 @@ public class ImageInfo {
         return timeAdded;
     }
 
-    public synchronized String getPath() {
+    public synchronized String getSQLFriendlyPath() {
+        if (path == null) {
+            return null;
+        } else {
+            return path.replace("'", "''");
+        }
+    }
+
+    public synchronized  String getPath() {
         return path;
+    }
+
+    public synchronized String getSQLFriendlySource() {
+        if (source == null) {
+            return null;
+        } else {
+            return source.replace("'", "''");
+        }
     }
 
     public synchronized String getSource() {

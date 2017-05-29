@@ -135,7 +135,9 @@ class ImageDatabaseTest {
         try {
             ImageInfo[] created = db.queueCreateImages("image1", "image2", "image3", "image4", "image5");
             db.commitChanges();
-            db.queueDeleteImages(created[0], created[1], created[2]);
+            created[0].setToBeDeleted(true);
+            created[1].setToBeDeleted(true);
+            created[2].setToBeDeleted(true);
             Assertions.assertTrue(created[0].isToBeDeleted());
             Assertions.assertTrue(created[1].isToBeDeleted());
             Assertions.assertTrue(created[2].isToBeDeleted());
@@ -163,7 +165,9 @@ class ImageDatabaseTest {
         try {
             ComicInfo[] created = db.queueCreateComics("c1", "c2", "c3", "c4", "c5");
             db.commitChanges();
-            db.queueDeleteComics(created[0], created[1], created[2]);
+            created[0].setToBeDeleted(true);
+            created[1].setToBeDeleted(true);
+            created[2].setToBeDeleted(true);
             Assertions.assertTrue(created[0].isToBeDeleted());
             Assertions.assertTrue(created[1].isToBeDeleted());
             Assertions.assertTrue(created[2].isToBeDeleted());
