@@ -26,8 +26,6 @@ public class ImageInfo extends DatabaseInfo {
 
     public static final int THUMBNAIL_SIZE = 140;
 
-    //TODO: Extract superclass from this and ComicInfo
-
 
     public ImageInfo(int id, String path, String source, byte rating, long timeAdded) {
         super(id, true);

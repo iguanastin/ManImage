@@ -1,5 +1,8 @@
-package manimage.common;
+package manimage.test;
 
+import manimage.common.ComicInfo;
+import manimage.common.ImageDatabase;
+import manimage.common.ImageInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,11 +15,14 @@ import java.util.ArrayList;
 class ImageDatabaseTest {
 
     private ImageDatabase db;
+    private static final String DB_PATH = "C:\\temp\\h2db_test";
+    private static final String DB_USER = "sa";
+    private static final String DB_PASS = "";
 
     @BeforeEach
     void setUp() {
         try {
-            db = new ImageDatabase("C:\\temp\\h2db_test", "sa", "", true);
+            db = new ImageDatabase(DB_PATH, DB_USER, DB_PASS, true);
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -226,6 +232,26 @@ class ImageDatabaseTest {
             ArrayList<ComicInfo> comics = db.getComics("SELECT * FROM " + ImageDatabase.SQL_COMICS_TABLE);
             Assertions.assertEquals(newPath, images.get(0).getPath());
             Assertions.assertEquals(newName, comics.get(0).getName());
+        } catch (SQLException ex) {
+            Assertions.fail(ex);
+        }
+    }
+
+    @Test
+    void testAddTags() {
+        try {
+            db.queueCreateTags("tag1", "tag2", "tag3");
+            db.commitChanges();
+
+            db.close();
+            db = new ImageDatabase(DB_PATH, DB_USER, DB_PASS,false);
+
+            Assertions.assertNotNull(db.getTag("tag1"));
+            Assertions.assertNotNull(db.getTag("tag2"));
+            Assertions.assertNotNull(db.getTag("tag3"));
+            Assertions.assertNotNull(db.getTag(1));
+            Assertions.assertNotNull(db.getTag(2));
+            Assertions.assertNotNull(db.getTag(3));
         } catch (SQLException ex) {
             Assertions.fail(ex);
         }

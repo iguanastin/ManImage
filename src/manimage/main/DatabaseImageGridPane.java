@@ -12,6 +12,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import manimage.common.ImageDatabase;
+import manimage.common.ImageDatabaseUpdateListener;
 import manimage.common.ImageInfo;
 
 import java.awt.*;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class DatabaseImageGridPane extends GridPane {
+public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpdateListener {
 
     private final ArrayList<GridImageView> imageViews = new ArrayList<>();
     private final ArrayList<GridImageView> selected = new ArrayList<>();
@@ -110,15 +111,6 @@ public class DatabaseImageGridPane extends GridPane {
 
         //----------------- Setup database -----------------------------------------------------------------------------
 
-        try {
-            db = new ImageDatabase("C:\\Users\\Austin\\h2db", "sa", "sa", false);
-            //TODO: Make database startup modular
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-
-        db.addChangeListener(this::updateView);
-
     }
 
     //------------------------ Getters ---------------------------------------------------------------------------------
@@ -186,10 +178,27 @@ public class DatabaseImageGridPane extends GridPane {
         return index;
     }
 
+    public int getPageNum() {
+        return pageNum;
+    }
+
+    public int getPageLength() {
+        return pageLength;
+    }
+
     //------------------ Setters ---------------------------------------------------------------------------------------
 
     void setPreviewListener(PreviewListener previewListener) {
         this.previewListener = previewListener;
+    }
+
+    void setDatabase(ImageDatabase db) {
+        if (this.db != null) {
+            this.db.removeChangeListener(this);
+        }
+
+        this.db = db;
+        if (db != null) db.addChangeListener(this);
     }
 
     void setPageNum(int pageNum) {
@@ -284,6 +293,7 @@ public class DatabaseImageGridPane extends GridPane {
     }
 
     private void removeSelected() {
+        if (db == null || !db.isConnected()) return;
         if (!selected.isEmpty()) {
             selected.forEach(view -> view.getInfo().setToBeDeleted());
             unselectAll();
@@ -296,6 +306,7 @@ public class DatabaseImageGridPane extends GridPane {
     }
 
     private void setSelectedRating(byte newRating) {
+        if (db == null || !db.isConnected()) return;
         if (!selected.isEmpty()) {
             selected.forEach(view -> view.getInfo().setRating(newRating));
             try {
@@ -307,9 +318,10 @@ public class DatabaseImageGridPane extends GridPane {
     }
 
     private void deleteSelected() {
-        selected.forEach(view -> {
-            new File(view.getInfo().getPath()).delete();
-        });
+        if (db == null || !db.isConnected()) return;
+//        selected.forEach(view -> {
+//            new File(view.getInfo().getPath()).delete();
+//        });
         removeSelected();
     }
 
@@ -322,21 +334,28 @@ public class DatabaseImageGridPane extends GridPane {
     }
 
     void updateVisibleThumbnails() {
+        if (getScene() == null) return;
         ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
         Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
+        int updates = 0;
 
-        //TODO: Make this actually work or just delete it and make pages smaller
+        layout();
 
         for (GridImageView n : imageViews) {
             Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
-
             if (!n.isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
                 n.loadThumbnail(true);
+                updates++;
             }
         }
+
+        if (updates > 0) System.out.println("UpdateVisibleThumbs:\t" + updates);
     }
 
     void updateView() {
+        if (db == null || !db.isConnected()) return;
+        int added = 0, removed = 0, updated = 0;
+
         try {
             String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy + " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
             ArrayList<ImageInfo> images = db.getImages(query);
@@ -345,28 +364,34 @@ public class DatabaseImageGridPane extends GridPane {
             for (ImageInfo image : images) {
                 if (i >= imageViews.size()) {
                     createNewGridView(i, image);
+                    added++;
                 } else {
                     GridImageView view = imageViews.get(i);
+                    view.unloadThumbnail();
 
                     view.setInfo(image);
-                    view.loadThumbnail(true);
+                    updated++;
                 }
 
                 i++;
             }
 
-            for (int k = i; k < imageViews.size(); k++) {
+            for (int k = imageViews.size() - i; k > 0; k--) {
                 GridImageView view = imageViews.remove(imageViews.size() - 1);
                 getChildren().remove(view);
+                removed++;
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+
+        System.out.println("GridUpdateView:\t\tAdded " + added + ", Removed " + removed + ", Updated " + updated);
+
+        updateVisibleThumbnails();
     }
 
-    private void createNewGridView(int index, ImageInfo image) {
+    private GridImageView createNewGridView(int index, ImageInfo image) {
         GridImageView view = new GridImageView(image);
-        if (image != null) view.loadThumbnail(true);
         view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
         view.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY || !view.isSelected()) {
@@ -385,6 +410,13 @@ public class DatabaseImageGridPane extends GridPane {
             getRowConstraints().add(new RowConstraints(150, 150, 150, Priority.NEVER, VPos.CENTER, true));
 
         add(view, index % columnWidth(), index / columnWidth());
+
+        return view;
+    }
+
+    @Override
+    public void databaseUpdated() {
+        updateView();
     }
 
 }

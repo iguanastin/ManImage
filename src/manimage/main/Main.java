@@ -48,6 +48,7 @@ public class Main extends Application {
 
         MainController mainController = loader.getController();
         mainController.setStage(mainStage);
+        mainController.grid.updateView();
 
         //-------------- Build SingleEditor stage ----------------------------------------------------------------------
 

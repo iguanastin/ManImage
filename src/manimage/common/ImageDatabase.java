@@ -81,6 +81,7 @@ public class ImageDatabase {
     }
 
     private synchronized void loadTags() throws SQLException {
+        tags.clear();
         ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_TAGS_TABLE);
         while (rs.next()) {
             tags.add(new TagInfo(rs.getInt(SQL_TAG_ID), rs.getNString(SQL_TAG_NAME), true));
@@ -128,6 +129,14 @@ public class ImageDatabase {
 
     private synchronized void cleanAndInitialize() throws SQLException {
         statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
+    }
+
+    public synchronized boolean isConnected() {
+        try {
+            return !connection.isClosed();
+        } catch (SQLException ex) {
+            return false;
+        }
     }
 
     public synchronized ArrayList<ImageInfo> getImages(String query) throws SQLException {
@@ -256,6 +265,7 @@ public class ImageDatabase {
 
         for (int i = 0; i < names.length; i++) {
             results[i] = new TagInfo(nextTagID, names[i], false);
+            results[i].setToBeInserted();
             nextTagID++;
             tags.add(results[i]);
         }
@@ -292,8 +302,20 @@ public class ImageDatabase {
     }
 
     public synchronized int commitChanges() throws SQLException {
+        int updates = commitChangesWithoutNotify();
+        if (updates > 0) notifyChangeListeners();
+        return updates;
+    }
+
+    public void notifyChangeListeners() {
+        changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
+    }
+
+    public synchronized int commitChangesWithoutNotify() throws SQLException {
         int updates = 0;
         StringBuilder queryBuilder = new StringBuilder();
+
+        //TODO: Make uncommitted updates reversible
 
         Iterator<TagInfo> tagIter = tags.listIterator();
         while (tagIter.hasNext()) {
@@ -328,11 +350,10 @@ public class ImageDatabase {
             comic.markAsCommitted();
         }
 
-        System.out.println("DBUpdates: " + updates);
-
         statement.executeUpdate(queryBuilder.toString());
 
-        if (updates > 0) changeListeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
+        System.out.println("DatabaseUpdated:\t" + updates);
+
         return updates;
     }
 

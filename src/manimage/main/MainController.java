@@ -31,16 +31,30 @@ public class MainController {
     public ScrollPane gridScrollPane;
     public DatabaseImageGridPane grid;
 
+    private ImageDatabase db;
     private File lastFolder;
     private Stage stage;
+
+    private String dbPath = "C:\\Users\\Austin\\h2db";
+    private String dbUser = "sa";
+    private String dbPass = "sa";
+
+    private int imageLoaderThreadCount = 0;
 
 
     //---------------------- Initializers ------------------------------------------------------------------------------
 
     @FXML
     public void initialize() {
-        grid.updateView();
+        try {
+            db = new ImageDatabase(dbPath, dbUser, dbPass, false);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
         grid.setPreviewListener(this::preview);
+        grid.setDatabase(db);
+        grid.updateView();
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
@@ -84,7 +98,11 @@ public class MainController {
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
-            getImageFiles(folder, false).forEach(db::queueCreateImage);
+            File[] files = folder.listFiles(Main.IMAGE_FILTER);
+            if (files == null) return;
+            for (File file : files) {
+                db.queueCreateImage(file.getAbsolutePath());
+            }
 
             try {
                 db.commitChanges();
@@ -104,13 +122,21 @@ public class MainController {
 
         if (folder != null) {
             ImageDatabase db = grid.getImageDatabase();
-            getImageFiles(folder, true).forEach(db::queueCreateImage);
 
-            try {
-                db.commitChanges();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
+            getSubFolders(folder).forEach(subFolder -> {
+                File[] files = subFolder.listFiles(Main.IMAGE_FILTER);
+                if (files == null) return;
+                for (File file : files) {
+                    db.queueCreateImage(file.getAbsolutePath());
+                }
+                try {
+                    db.commitChangesWithoutNotify();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            });
+
+            db.notifyChangeListeners();
 
             lastFolder = folder.getParentFile();
         }
@@ -159,23 +185,22 @@ public class MainController {
         }
     }
 
-    public void gridScrollPaneScrolled(ScrollEvent event) {
+    public void gridScrolled(ScrollEvent event) {
         grid.updateVisibleThumbnails();
     }
 
     //--------------------- Getters ------------------------------------------------------------------------------------
 
-    private ArrayList<String> getImageFiles(File folder, boolean recurse) {
-        final ArrayList<String> results = new ArrayList<>();
-        final File[] files = folder.listFiles(Main.IMAGE_AND_DIRECTORY_FILTER);
+    private ArrayList<File> getSubFolders(File folder) {
+        File[] folders = folder.listFiles();
+        ArrayList<File> results = new ArrayList<>();
 
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    results.add(file.getAbsolutePath());
-                } else if (recurse) {
-                    results.addAll(getImageFiles(file, true));
-                }
+        if (folders == null) return results;
+
+        for (File file : folders) {
+            if (file.isDirectory()) {
+                results.add(file);
+                results.addAll(getSubFolders(file));
             }
         }
 

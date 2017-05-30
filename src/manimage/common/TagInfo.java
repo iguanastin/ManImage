@@ -27,10 +27,10 @@ public class TagInfo extends DatabaseInfo {
         if (isSynchronized()) return 0;
 
         if (isToBeDeleted()) {
+            query.append("DELETE FROM ").append(ImageDatabase.SQL_TAGS_TABLE).append(" WHERE ").append(ImageDatabase.SQL_TAG_ID).append('=').append(getId()).append(";\n");
+        } else if (isToBeInserted()) {
             query.append("INSERT INTO ").append(ImageDatabase.SQL_TAGS_TABLE).append(" (").append(ImageDatabase.SQL_TAG_ID).append(',').append(ImageDatabase.SQL_TAG_NAME).append(") VALUES (");
             query.append(getId()).append(',').append(getSQLSafeName()).append(");\n");
-        } else if (isToBeInserted()) {
-            query.append("DELETE FROM ").append(ImageDatabase.SQL_TAGS_TABLE).append(" WHERE ").append(ImageDatabase.SQL_TAG_ID).append('=').append(getId()).append(";\n");
         }
 
         return 1;

@@ -56,9 +56,9 @@
                 </SplitPane>
                 <ScrollPane fx:id="gridScrollPane" fitToWidth="true" hbarPolicy="NEVER" maxHeight="Infinity"
                             maxWidth="-Infinity" minHeight="150.0" minViewportWidth="485.0" minWidth="-Infinity"
-                            prefViewportWidth="485.0" prefWidth="638.0" vbarPolicy="ALWAYS" onMouseClicked="#gridScrollPaneClicked" onKeyPressed="#gridScrollPaneKeyPressed" onScroll="#gridScrollPaneScrolled">
+                            prefViewportWidth="485.0" prefWidth="638.0" vbarPolicy="ALWAYS" onMouseClicked="#gridScrollPaneClicked" onKeyPressed="#gridScrollPaneKeyPressed">
                     <content>
-                        <DatabaseImageGridPane fx:id="grid" hgap="5.0" vgap="5.0">
+                        <DatabaseImageGridPane fx:id="grid" hgap="5.0" vgap="5.0" onScroll="#gridScrolled">
                             <columnConstraints>
                                 <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="150.0"
                                                    prefWidth="150.0" halignment="CENTER"/>
