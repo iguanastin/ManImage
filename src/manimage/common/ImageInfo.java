@@ -13,7 +13,9 @@ public class ImageInfo extends DatabaseInfo {
     private WeakReference<Image> image;
     private WeakReference<Image> thumbnail;
     private ImageHistogram histogram;
-    private final ArrayList<Tag> tags = new ArrayList<>();
+    private ArrayList<TagInfo> tags;
+    private ArrayList<TagInfo> tagsToRemove;
+    private ArrayList<TagInfo> tagsToAdd;
 
     private String path;
     private String source;
@@ -48,6 +50,10 @@ public class ImageInfo extends DatabaseInfo {
 
     public synchronized boolean isModified() {
         return pathChanged || sourceChanged || ratingChanged;
+    }
+
+    public synchronized boolean tagsChanged() {
+        return (tagsToAdd != null && !tagsToAdd.isEmpty()) || (tagsToRemove != null && !tagsToRemove.isEmpty());
     }
 
     public synchronized boolean isPathChanged() {
@@ -109,7 +115,7 @@ public class ImageInfo extends DatabaseInfo {
         }
     }
 
-    public synchronized  String getPath() {
+    public synchronized String getPath() {
         return path;
     }
 
@@ -134,46 +140,105 @@ public class ImageInfo extends DatabaseInfo {
         return result;
     }
 
-    public synchronized ArrayList<Tag> getTags() {
+    public synchronized ArrayList<TagInfo> getTags() {
         return tags;
     }
 
     @Override
-    public int buildSQLUpdate(StringBuilder query) {
+    public int buildSQLUpdates(StringBuilder query) {
         if (isSynchronized()) return 0;
 
+        int updates = 0;
         if (isToBeDeleted()) {
-            query.append("DELETE FROM ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" WHERE ").append(ImageDatabase.SQL_IMAGE_ID).append('=').append(getId()).append(";\n");
+            updates += buildDeleteSQLUpdates(query);
         } else if (isToBeInserted()) {
-            query.append("INSERT INTO ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" (").append(ImageDatabase.SQL_IMAGE_ID).append(',').append(ImageDatabase.SQL_IMAGE_PATH).append(',');
-            query.append(ImageDatabase.SQL_IMAGE_SOURCE).append(',').append(ImageDatabase.SQL_IMAGE_RATING).append(',').append(ImageDatabase.SQL_IMAGE_TIME_ADDED).append(") VALUES (");
-            query.append(getId()).append(',').append(getSQLSafePath()).append(',').append(getSQLSafeSource()).append(',').append(getRating()).append(',').append(getTimeAdded()).append(");\n");
-        } else if (isModified()) {
-            query.append("UPDATE ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" SET ");
-            boolean comma = false;
-            if (isPathChanged()) {
-                query.append(ImageDatabase.SQL_IMAGE_PATH).append('=').append(getSQLSafePath());
-                comma = true;
+            updates += buildInsertSQLUpdates(query);
+        } else {
+            if (isModified()) {
+                updates += buildChangeSQLUpdates(query);
             }
-            if (isSourceChanged()) {
-                if (comma) query.append(',');
-                query.append(ImageDatabase.SQL_IMAGE_SOURCE).append('=').append(getSQLSafeSource());
-                comma = true;
+            if (tagsChanged()) {
+                updates += buildTagsSQLUpdates(query);
             }
-            if (isRatingChanged()) {
-                if (comma) query.append(',');
-                query.append(ImageDatabase.SQL_IMAGE_RATING).append('=').append(getRating());
-            }
-            query.append(" WHERE ").append(ImageDatabase.SQL_IMAGE_ID).append('=').append(getId()).append(";\n");
         }
 
+        return updates;
+    }
+
+    private int buildDeleteSQLUpdates(StringBuilder query) {
+        query.append("DELETE FROM ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" WHERE ").append(ImageDatabase.SQL_IMAGE_ID).append('=').append(getId()).append(";\n");
+
         return 1;
+    }
+
+    private int buildInsertSQLUpdates(StringBuilder query) {
+        query.append("INSERT INTO ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" (").append(ImageDatabase.SQL_IMAGE_ID).append(',').append(ImageDatabase.SQL_IMAGE_PATH).append(',');
+        query.append(ImageDatabase.SQL_IMAGE_SOURCE).append(',').append(ImageDatabase.SQL_IMAGE_RATING).append(',').append(ImageDatabase.SQL_IMAGE_TIME_ADDED).append(") VALUES (");
+        query.append(getId()).append(',').append(getSQLSafePath()).append(',').append(getSQLSafeSource()).append(',').append(getRating()).append(',').append(getTimeAdded()).append(");\n");
+
+        return 1;
+    }
+
+    private int buildChangeSQLUpdates(StringBuilder query) {
+        query.append("UPDATE ").append(ImageDatabase.SQL_IMAGES_TABLE).append(" SET ");
+        boolean comma = false;
+        if (isPathChanged()) {
+            query.append(ImageDatabase.SQL_IMAGE_PATH).append('=').append(getSQLSafePath());
+            comma = true;
+        }
+        if (isSourceChanged()) {
+            if (comma) query.append(',');
+            query.append(ImageDatabase.SQL_IMAGE_SOURCE).append('=').append(getSQLSafeSource());
+            comma = true;
+        }
+        if (isRatingChanged()) {
+            if (comma) query.append(',');
+            query.append(ImageDatabase.SQL_IMAGE_RATING).append('=').append(getRating());
+        }
+        query.append(" WHERE ").append(ImageDatabase.SQL_IMAGE_ID).append('=').append(getId()).append(";\n");
+
+        return 1;
+    }
+
+    private int buildTagsSQLUpdates(StringBuilder query) {
+        int updates = 0;
+        if (tagsToRemove != null) {
+            for (TagInfo tag : tagsToRemove) {
+                query.append("DELETE FROM ").append(ImageDatabase.SQL_IMAGE_TAGGED_TABLE).append(" WHERE ").append(ImageDatabase.SQL_TAG_ID).append('=').append(tag.getId()).append(" AND ");
+                query.append(ImageDatabase.SQL_IMAGE_ID).append('=').append(getId()).append(";\n");
+                updates++;
+            }
+        }
+
+        if (tagsToAdd != null) {
+            for (TagInfo tag : tagsToAdd) {
+                query.append("INSERT INTO ").append(ImageDatabase.SQL_IMAGE_TAGGED_TABLE).append(" (").append(ImageDatabase.SQL_IMAGE_ID).append(',').append(ImageDatabase.SQL_TAG_ID);
+                query.append(") VALUES (").append(getId()).append(',').append(tag.getId()).append(");\n");
+                updates++;
+            }
+        }
+
+        return updates;
     }
 
     //------------- Setters --------------------------------------------------------------------------------------------
 
     @Override
     public synchronized void markAsCommitted() {
+        if (tags != null) {
+            if (tagsToRemove != null) {
+                tags.removeAll(tagsToRemove);
+                tagsToRemove.clear();
+            }
+            if (tagsToAdd != null) {
+                tags.addAll(tagsToAdd);
+                tagsToAdd.clear();
+            }
+            if (isToBeDeleted()) {
+                tags.clear();
+            }
+        }
+
         super.markAsCommitted();
         sourceChanged = ratingChanged = pathChanged = false;
     }
@@ -196,9 +261,25 @@ public class ImageInfo extends DatabaseInfo {
         this.path = path;
     }
 
-    public synchronized boolean addTag(Tag tag) {
-        if (tags.contains(tag)) return false;
-        tags.add(tag);
+    public synchronized boolean addTag(TagInfo tag) {
+        if (tag == null) return false;
+
+        if (tags == null) tags = new ArrayList<>();
+        if (tagsToAdd == null) tagsToAdd = new ArrayList<>();
+
+        if (tagsToAdd.contains(tag) || tags.contains(tag)) return false;
+        tagsToAdd.add(tag);
+        return true;
+    }
+
+    public synchronized boolean removeTag(TagInfo tag) {
+        if (tag == null) return false;
+
+        if (tags == null) tags = new ArrayList<>();
+        if (tagsToRemove == null) tagsToRemove = new ArrayList<>();
+
+        if (tagsToRemove.contains(tag) || !tags.contains(tag)) return false;
+        tagsToRemove.add(tag);
         return true;
     }
 

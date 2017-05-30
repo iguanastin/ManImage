@@ -47,12 +47,7 @@ public class MainController {
 
     private void preview(ImageInfo info) {
         previewDynamicImageView.setImage(info.getImage(true));
-        try {
-            grid.getImageDatabase().loadTags(info);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        previewTagsLabel.setText(info.getTags().toString());
+//        previewTagsLabel.setText(info.getTags().toString());
     }
 
     //-------------------- Listeners -----------------------------------------------------------------------------------

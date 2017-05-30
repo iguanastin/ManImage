@@ -18,7 +18,7 @@ public abstract class DatabaseInfo {
         return id;
     }
 
-    public abstract int buildSQLUpdate(StringBuilder query);
+    public abstract int buildSQLUpdates(StringBuilder query);
 
     //------------------- Setters --------------------------------------------------------------------------------------
 

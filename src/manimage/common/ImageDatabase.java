@@ -50,15 +50,13 @@ public class ImageDatabase {
 
     private final ArrayList<ImageInfo> imageInfos = new ArrayList<>();
     private final ArrayList<ComicInfo> comicInfos = new ArrayList<>();
-    private final ArrayList<Tag> tags = new ArrayList<>();
+    private final ArrayList<TagInfo> tags = new ArrayList<>();
     private final Connection connection;
     private final Statement statement;
 
     private int nextImageID;
     private int nextComicID;
     private int nextTagID;
-
-    //TODO: Implement tag add/remove queueing
 
 
     public ImageDatabase(String path, String username, String password, boolean forceClean) throws SQLException {
@@ -75,12 +73,21 @@ public class ImageDatabase {
             }
         }
 
+        loadTags();
+
         nextImageID = getHighestImageID() + 1;
         nextComicID = getHighestComicID() + 1;
         nextTagID = getHighestTagID() + 1;
     }
 
-    private int getHighestImageID() {
+    private synchronized void loadTags() throws SQLException {
+        ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_TAGS_TABLE);
+        while (rs.next()) {
+            tags.add(new TagInfo(rs.getInt(SQL_TAG_ID), rs.getNString(SQL_TAG_NAME), true));
+        }
+    }
+
+    private synchronized int getHighestImageID() {
         try {
             ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + " FROM " + SQL_IMAGES_TABLE + " ORDER BY " + SQL_IMAGE_ID + " DESC");
             if (rs.next()) {
@@ -93,7 +100,7 @@ public class ImageDatabase {
         }
     }
 
-    private int getHighestComicID() {
+    private synchronized int getHighestComicID() {
         try {
             ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_COMIC_ID + " FROM " + SQL_COMICS_TABLE + " ORDER BY " + SQL_COMIC_ID + " DESC");
             if (rs.next()) {
@@ -106,7 +113,7 @@ public class ImageDatabase {
         }
     }
 
-    private int getHighestTagID() {
+    private synchronized int getHighestTagID() {
         try {
             ResultSet rs = statement.executeQuery("SELECT TOP 1 " + SQL_TAG_ID + " FROM " + SQL_TAGS_TABLE + " ORDER BY " + SQL_TAG_ID + " DESC");
             if (rs.next()) {
@@ -119,11 +126,11 @@ public class ImageDatabase {
         }
     }
 
-    private void cleanAndInitialize() throws SQLException {
+    private synchronized void cleanAndInitialize() throws SQLException {
         statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
     }
 
-    public ArrayList<ImageInfo> getImages(String query) throws SQLException {
+    public synchronized ArrayList<ImageInfo> getImages(String query) throws SQLException {
         final ArrayList<ImageInfo> results = new ArrayList<>();
 
         ResultSet rs = statement.executeQuery(query);
@@ -147,7 +154,7 @@ public class ImageDatabase {
         return results;
     }
 
-    public ArrayList<ComicInfo> getComics(String query) throws SQLException {
+    public synchronized ArrayList<ComicInfo> getComics(String query) throws SQLException {
         final ArrayList<ComicInfo> results = new ArrayList<>();
 
         ResultSet rs = statement.executeQuery(query);
@@ -169,26 +176,8 @@ public class ImageDatabase {
         return results;
     }
 
-    public void loadTags(ImageInfo image) throws SQLException {
-        ResultSet rs = statement.executeQuery("SELECT * FROM " + SQL_IMAGE_TAGGED_TABLE + " JOIN " + SQL_TAGS_TABLE + " ON " + SQL_TAGS_TABLE + "." + SQL_TAG_ID + "=" + SQL_IMAGE_TAGGED_TABLE + "." + SQL_TAG_ID + " WHERE " + SQL_IMAGE_TAGGED_TABLE + "." + SQL_IMAGE_ID + "=" + image.getId());
-
-        //TODO: Make tag retrieval batched
-
-        while (rs.next()) {
-            final int id = rs.getInt(SQL_TAG_ID);
-            Tag tag = getCachedTag(id);
-
-            if (tag == null) {
-                tag = new Tag(id, rs.getNString(SQL_TAG_NAME));
-                tags.add(tag);
-            }
-
-            image.addTag(tag);
-        }
-    }
-
-    private Tag getCachedTag(int id) {
-        for (Tag tag : tags) {
+    public synchronized TagInfo getTag(int id) {
+        for (TagInfo tag : tags) {
             if (tag.getId() == id) {
                 return tag;
             }
@@ -197,7 +186,17 @@ public class ImageDatabase {
         return null;
     }
 
-    private ImageInfo getCachedImage(int id) {
+    public synchronized TagInfo getTag(String name) {
+        for (TagInfo tag : tags) {
+            if (tag.getName().equalsIgnoreCase(name)) {
+                return tag;
+            }
+        }
+
+        return null;
+    }
+
+    private synchronized ImageInfo getCachedImage(int id) {
         for (ImageInfo info : imageInfos) {
             if (info.getId() == id) {
                 return info;
@@ -207,7 +206,7 @@ public class ImageDatabase {
         return null;
     }
 
-    private ComicInfo getCachedComic(int id) {
+    private synchronized ComicInfo getCachedComic(int id) {
         for (ComicInfo info : comicInfos) {
             if (info.getId() == id) {
                 return info;
@@ -222,6 +221,7 @@ public class ImageDatabase {
 
         for (int i = 0; i < paths.length; i++) {
             ImageInfo image = new ImageInfo(nextImageID, paths[i]);
+            image.addTag(getTag("tagme"));
             nextImageID++;
             imageInfos.add(image);
             results[i] = image;
@@ -251,6 +251,22 @@ public class ImageDatabase {
         return queueCreateComics(name)[0];
     }
 
+    public synchronized TagInfo[] queueCreateTags(String... names) {
+        final TagInfo[] results = new TagInfo[names.length];
+
+        for (int i = 0; i < names.length; i++) {
+            results[i] = new TagInfo(nextTagID, names[i], false);
+            nextTagID++;
+            tags.add(results[i]);
+        }
+
+        return results;
+    }
+
+    public synchronized TagInfo queueCreateTag(String name) {
+        return queueCreateTags(name)[0];
+    }
+
     public synchronized void clearCachedImages() {
         imageInfos.clear();
     }
@@ -275,17 +291,26 @@ public class ImageDatabase {
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_COMIC_ID + "," + SQL_COMIC_PAGES_PAGENUM + " FROM " + SQL_COMIC_PAGES_TABLE);
     }
 
-    public int commitChanges() throws SQLException {
+    public synchronized int commitChanges() throws SQLException {
         int updates = 0;
         StringBuilder queryBuilder = new StringBuilder();
 
-        //TODO: Make tag cache changes batched
+        Iterator<TagInfo> tagIter = tags.listIterator();
+        while (tagIter.hasNext()) {
+            TagInfo tag = tagIter.next();
+            if (!tag.isSynchronized()) {
+                updates += tag.buildSQLUpdates(queryBuilder);
+            }
+
+            if (tag.isToBeDeleted()) tagIter.remove();
+            tag.markAsCommitted();
+        }
 
         Iterator<ImageInfo> imageIter = imageInfos.listIterator();
         while (imageIter.hasNext()) {
             ImageInfo image = imageIter.next();
             if (!image.isSynchronized()) {
-                updates += image.buildSQLUpdate(queryBuilder);
+                updates += image.buildSQLUpdates(queryBuilder);
             }
 
             if (image.isToBeDeleted()) imageIter.remove();
@@ -296,7 +321,7 @@ public class ImageDatabase {
         while (comicIter.hasNext()) {
             ComicInfo comic = comicIter.next();
             if (!comic.isSynchronized()) {
-                updates += comic.buildSQLUpdate(queryBuilder);
+                updates += comic.buildSQLUpdates(queryBuilder);
             }
 
             if (comic.isToBeDeleted()) comicIter.remove();
@@ -319,7 +344,7 @@ public class ImageDatabase {
         return changeListeners.remove(listener);
     }
 
-    public void close() throws SQLException {
+    public synchronized void close() throws SQLException {
         statement.close();
         connection.close();
     }

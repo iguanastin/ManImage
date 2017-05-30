@@ -57,7 +57,7 @@ public class ComicInfo extends DatabaseInfo {
     }
 
     @Override
-    public int buildSQLUpdate(StringBuilder query) {
+    public int buildSQLUpdates(StringBuilder query) {
         if (isSynchronized()) return 0;
 
         if (isToBeDeleted()) {
