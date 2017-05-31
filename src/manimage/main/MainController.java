@@ -39,8 +39,6 @@ public class MainController {
     private String dbUser = "sa";
     private String dbPass = "sa";
 
-    private int imageLoaderThreadCount = 0;
-
 
     //---------------------- Initializers ------------------------------------------------------------------------------
 
@@ -187,6 +185,14 @@ public class MainController {
 
     public void gridScrolled(ScrollEvent event) {
         grid.updateVisibleThumbnails();
+    }
+
+    public void clearAllOnAction(ActionEvent event) {
+        try {
+            db.cleanAndInitialize();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     //--------------------- Getters ------------------------------------------------------------------------------------

@@ -46,15 +46,9 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
         MenuItem[] items = new MenuItem[10];
-        items[0] = new MenuItem("Edit");
+        items[0] = new MenuItem("Add Tag");
         items[0].setOnAction(event -> {
-            if (selected.size() == 1) {
-//                Main.MAIN.openSingleEditor();
-                //TODO: Implement single-image editor
-            } else if (selected.size() > 1) {
-                //TODO: Create multi-image editor
-                //TODO: Implement multi-image editor
-            }
+            //TODO: Implement tag adding
         });
 
         items[1] = new MenuItem("View Info");

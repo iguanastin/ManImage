@@ -125,7 +125,7 @@ public class ImageDatabase {
         }
     }
 
-    private synchronized void cleanAndInitialize() throws SQLException {
+    public synchronized void cleanAndInitialize() throws SQLException {
         statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
     }
 
@@ -289,7 +289,7 @@ public class ImageDatabase {
      * @throws SQLException When basic architecture is unexpected
      */
     public void test() throws SQLException {
-        //TODO: Modify test to test database and make updates if necessary
+        //TODO: Modify this to test database and make updates if necessary
 
         statement.executeQuery("SELECT TOP 1 " + SQL_IMAGE_ID + "," + SQL_IMAGE_PATH + "," + SQL_IMAGE_SOURCE + "," + SQL_IMAGE_RATING + "," + SQL_IMAGE_TIME_ADDED + " FROM " + SQL_IMAGES_TABLE);
         statement.executeQuery("SELECT TOP 1 " + SQL_TAG_ID + "," + SQL_TAG_NAME + " FROM " + SQL_TAGS_TABLE);

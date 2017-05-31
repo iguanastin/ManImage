@@ -15,7 +15,6 @@ public class Main extends Application {
         String name = file.getName().toLowerCase();
         return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif");
     };
-    static final FileFilter IMAGE_AND_DIRECTORY_FILTER = file -> file.isDirectory() || IMAGE_FILTER.accept(file);
     static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
 
     //TODO: Redesign this GUI entirely
@@ -34,6 +33,7 @@ public class Main extends Application {
             Text
         Inline editors?
         CSS Styling?
+        Pages
     */
 
     @Override

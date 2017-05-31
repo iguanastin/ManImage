@@ -11,6 +11,7 @@ public class ComicInfo extends DatabaseInfo {
     private boolean nameChanged = false, sourceChanged = false;
 
     //TODO: Implement tags
+    //TODO: Implement pages
 
 
     public ComicInfo(int id, String name, String source, long timeAdded) {
