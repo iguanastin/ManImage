@@ -44,12 +44,10 @@ public class ImageDatabase {
 
     public static final String SQL_COMIC_PAGES_PAGENUM = "page_num";
 
-    private final static int TAGME_TAG_ID = 1;
-
     private final ArrayList<ImageDatabaseUpdateListener> changeListeners = new ArrayList<>();
 
-    private final ArrayList<ImageInfo> imageInfos = new ArrayList<>();
-    private final ArrayList<ComicInfo> comicInfos = new ArrayList<>();
+    private final ArrayList<ImageInfo> images = new ArrayList<>();
+    private final ArrayList<ComicInfo> comics = new ArrayList<>();
     private final ArrayList<TagInfo> tags = new ArrayList<>();
     private final Connection connection;
     private final Statement statement;
@@ -150,7 +148,7 @@ public class ImageDatabase {
 
             if (image == null) {
                 image = new ImageInfo(id, rs.getNString(SQL_IMAGE_PATH), rs.getNString(SQL_IMAGE_SOURCE), rs.getByte(SQL_IMAGE_RATING), rs.getLong(SQL_IMAGE_TIME_ADDED));
-                imageInfos.add(image);
+                images.add(image);
             }
 
             results.add(image);
@@ -174,7 +172,7 @@ public class ImageDatabase {
 
             if (comic == null) {
                 comic = new ComicInfo(rs.getInt(SQL_COMIC_ID), rs.getNString(SQL_COMIC_NAME), rs.getNString(SQL_COMIC_SOURCE), rs.getLong(SQL_COMIC_TIME_ADDED));
-                comicInfos.add(comic);
+                comics.add(comic);
             }
 
             results.add(comic);
@@ -206,7 +204,7 @@ public class ImageDatabase {
     }
 
     private synchronized ImageInfo getCachedImage(int id) {
-        for (ImageInfo info : imageInfos) {
+        for (ImageInfo info : images) {
             if (info.getId() == id) {
                 return info;
             }
@@ -216,7 +214,7 @@ public class ImageDatabase {
     }
 
     private synchronized ComicInfo getCachedComic(int id) {
-        for (ComicInfo info : comicInfos) {
+        for (ComicInfo info : comics) {
             if (info.getId() == id) {
                 return info;
             }
@@ -232,7 +230,7 @@ public class ImageDatabase {
             ImageInfo image = new ImageInfo(nextImageID, paths[i]);
             image.addTag(getTag("tagme"));
             nextImageID++;
-            imageInfos.add(image);
+            images.add(image);
             results[i] = image;
         }
 
@@ -249,7 +247,7 @@ public class ImageDatabase {
         for (int i = 0; i < names.length; i++) {
             ComicInfo comic = new ComicInfo(nextComicID, names[i]);
             nextComicID++;
-            comicInfos.add(comic);
+            comics.add(comic);
             results[i] = comic;
         }
 
@@ -278,11 +276,11 @@ public class ImageDatabase {
     }
 
     public synchronized void clearCachedImages() {
-        imageInfos.clear();
+        images.clear();
     }
 
     public synchronized void clearCachedComics() {
-        comicInfos.clear();
+        comics.clear();
     }
 
     /**
@@ -328,7 +326,7 @@ public class ImageDatabase {
             tag.markAsCommitted();
         }
 
-        Iterator<ImageInfo> imageIter = imageInfos.listIterator();
+        Iterator<ImageInfo> imageIter = images.listIterator();
         while (imageIter.hasNext()) {
             ImageInfo image = imageIter.next();
             if (!image.isSynchronized()) {
@@ -339,7 +337,7 @@ public class ImageDatabase {
             image.markAsCommitted();
         }
 
-        Iterator<ComicInfo> comicIter = comicInfos.listIterator();
+        Iterator<ComicInfo> comicIter = comics.listIterator();
         while (comicIter.hasNext()) {
             ComicInfo comic = comicIter.next();
             if (!comic.isSynchronized()) {

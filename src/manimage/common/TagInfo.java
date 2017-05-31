@@ -36,4 +36,14 @@ public class TagInfo extends DatabaseInfo {
         return 1;
     }
 
+    @Override
+    public String toString() {
+        return "[" + getId() + ", " + getName() + "]";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof TagInfo && ((TagInfo) obj).getId() == getId();
+    }
+
 }

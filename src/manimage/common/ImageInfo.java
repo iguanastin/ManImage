@@ -91,7 +91,7 @@ public class ImageInfo extends DatabaseInfo {
     public synchronized ImageHistogram getHistogram() {
         try {
             if (histogram == null) histogram = ImageHistogram.getHistogram(getImage(false));
-        } catch (HistogramReadException ex){
+        } catch (HistogramReadException ex) {
         }
 
         return histogram;
@@ -151,13 +151,12 @@ public class ImageInfo extends DatabaseInfo {
             updates += buildDeleteSQLUpdates(query);
         } else if (isToBeInserted()) {
             updates += buildInsertSQLUpdates(query);
-        } else {
-            if (isModified()) {
-                updates += buildChangeSQLUpdates(query);
-            }
-            if (tagsChanged()) {
-                updates += buildTagsSQLUpdates(query);
-            }
+        } else if (isModified()) {
+            updates += buildChangeSQLUpdates(query);
+        }
+
+        if (tagsChanged()) {
+            updates += buildTagsSQLUpdates(query);
         }
 
         return updates;
