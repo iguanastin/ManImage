@@ -155,23 +155,35 @@ public class MainController {
     public void gridScrollPaneKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.LEFT) {
             grid.selectLeft(event.isShiftDown(), event.isControlDown());
-            preview(grid.getLastSelected().getInfo());
-            ensureVisible(gridScrollPane, grid.getLastSelected());
+            if (grid.getLastSelected() != null) {
+                preview(grid.getLastSelected().getInfo());
+                ensureVisible(gridScrollPane, grid.getLastSelected());
+                grid.updateVisibleThumbnails();
+            }
             event.consume();
         } else if (event.getCode() == KeyCode.RIGHT) {
             grid.selectRight(event.isShiftDown(), event.isControlDown());
-            preview(grid.getLastSelected().getInfo());
-            ensureVisible(gridScrollPane, grid.getLastSelected());
+            if (grid.getLastSelected() != null) {
+                preview(grid.getLastSelected().getInfo());
+                ensureVisible(gridScrollPane, grid.getLastSelected());
+                grid.updateVisibleThumbnails();
+            }
             event.consume();
         } else if (event.getCode() == KeyCode.DOWN) {
             grid.selectDown(event.isShiftDown(), event.isControlDown());
-            preview(grid.getLastSelected().getInfo());
-            ensureVisible(gridScrollPane, grid.getLastSelected());
+            if (grid.getLastSelected() != null) {
+                preview(grid.getLastSelected().getInfo());
+                ensureVisible(gridScrollPane, grid.getLastSelected());
+                grid.updateVisibleThumbnails();
+            }
             event.consume();
         } else if (event.getCode() == KeyCode.UP) {
             grid.selectUp(event.isShiftDown(), event.isControlDown());
-            preview(grid.getLastSelected().getInfo());
-            ensureVisible(gridScrollPane, grid.getLastSelected());
+            if (grid.getLastSelected() != null) {
+                preview(grid.getLastSelected().getInfo());
+                ensureVisible(gridScrollPane, grid.getLastSelected());
+                grid.updateVisibleThumbnails();
+            }
             event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.A) {
             if (grid.areAllSelected()) {
@@ -180,6 +192,16 @@ public class MainController {
                 grid.selectAll();
             }
             event.consume();
+        } else if (event.getCode() == KeyCode.PAGE_DOWN) {
+            gridScrollPane.setVvalue(0);
+            grid.unselectAll();
+            grid.setPage(grid.getPage() + 1);
+        } else if (event.getCode() == KeyCode.PAGE_UP) {
+            if (grid.getPage() > 0) {
+                gridScrollPane.setVvalue(0);
+                grid.unselectAll();
+                grid.setPage(grid.getPage() - 1);
+            }
         }
     }
 

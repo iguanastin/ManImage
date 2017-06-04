@@ -172,7 +172,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return index;
     }
 
-    public int getPageNum() {
+    public int getPage() {
         return pageNum;
     }
 
@@ -195,7 +195,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         if (db != null) db.addChangeListener(this);
     }
 
-    void setPageNum(int pageNum) {
+    void setPage(int pageNum) {
         if (this.pageNum != pageNum) {
             this.pageNum = pageNum;
             updateView();
@@ -248,6 +248,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     }
 
     void selectLeft(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return;
         int index = getCurrentSelectedIndex() - 1;
 
         if (index >= 0) {
@@ -256,6 +257,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     }
 
     void selectRight(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return;
         int index = getCurrentSelectedIndex() + 1;
 
         if (index < imageViews.size()) {
@@ -264,6 +266,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     }
 
     void selectDown(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return;
         int index = getCurrentSelectedIndex() + columnWidth();
 
         if (index >= imageViews.size()) index = imageViews.size() - 1;
@@ -272,6 +275,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     }
 
     void selectUp(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return;
         int index = getCurrentSelectedIndex() - columnWidth();
 
         if (index < 0) index = 0;

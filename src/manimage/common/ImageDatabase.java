@@ -127,6 +127,9 @@ public class ImageDatabase {
 
     public synchronized void cleanAndInitialize() throws SQLException {
         statement.executeUpdate(SQL_DROP_TABLES + SQL_INITIALIZE_TABLES);
+        commitChanges();
+
+        notifyChangeListeners();
     }
 
     public synchronized boolean isConnected() {
