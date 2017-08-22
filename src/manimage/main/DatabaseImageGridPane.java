@@ -114,8 +114,6 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
         contextMenu = new ContextMenu(items);
 
-        //----------------- Setup database -----------------------------------------------------------------------------
-
     }
 
     //------------------------ Getters ---------------------------------------------------------------------------------

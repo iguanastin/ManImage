@@ -20,6 +20,10 @@ import manimage.common.DBInterface;
 import manimage.common.ImgInfo;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -66,6 +70,9 @@ public class MainController {
 
     @FXML
     public void initialize() {
+
+        backupDatabase();
+
         try {
             db = new DBInterface(dbPath, dbUser, dbPass);
         } catch (SQLException ex) {
@@ -125,6 +132,38 @@ public class MainController {
         grid.updateSearchContents();
     }
 
+    private static void ensureVisible(ScrollPane pane, Node node) {
+        Bounds viewport = pane.getViewportBounds();
+        double contentHeight = pane.getContent().getBoundsInLocal().getHeight();
+        double nodeMinY = node.getBoundsInParent().getMinY();
+        double nodeMaxY = node.getBoundsInParent().getMaxY();
+        double viewportMinY = (contentHeight - viewport.getHeight()) * pane.getVvalue();
+        double viewportMaxY = viewportMinY + viewport.getHeight();
+        if (nodeMinY < viewportMinY) {
+            pane.setVvalue(nodeMinY / (contentHeight - viewport.getHeight()));
+        } else if (nodeMaxY > viewportMaxY) {
+            pane.setVvalue((nodeMaxY - viewport.getHeight()) / (contentHeight - viewport.getHeight()));
+        }
+    }
+
+    void backupDatabase() {
+        try {
+            File cur = new File(dbPath + ".mv.db");
+            File bak1 = new File(dbPath + ".mv.db.bak");
+            File bak2 = new File(dbPath + ".mv.db-2.bak");
+            File bak3 = new File(dbPath + ".mv.db-3.bak");
+            //Copy bak2 to bak3 if it exists
+            if (bak2.exists()) Files.copy(bak2.toPath(), bak3.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            //Copy bak1 to bak2 if it exists
+            if (bak1.exists()) Files.copy(bak1.toPath(), bak2.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            //Copy cur to bak1
+            Files.copy(cur.toPath(), bak1.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Backed up the database to: " + dbPath + ".mv.db.bak");
+        } catch (IOException e) {
+            System.err.println("Unable to backup database: " + e.getLocalizedMessage());
+        }
+    }
+
     //--------------------- Getters ------------------------------------------------------------------------------------
 
     private ArrayList<File> getSubFolders(File folder) {
@@ -147,22 +186,6 @@ public class MainController {
 
     void setStage(Stage stage) {
         this.stage = stage;
-    }
-
-    //-------------------- Operators -----------------------------------------------------------------------------------
-
-    private static void ensureVisible(ScrollPane pane, Node node) {
-        Bounds viewport = pane.getViewportBounds();
-        double contentHeight = pane.getContent().getBoundsInLocal().getHeight();
-        double nodeMinY = node.getBoundsInParent().getMinY();
-        double nodeMaxY = node.getBoundsInParent().getMaxY();
-        double viewportMinY = (contentHeight - viewport.getHeight()) * pane.getVvalue();
-        double viewportMaxY = viewportMinY + viewport.getHeight();
-        if (nodeMinY < viewportMinY) {
-            pane.setVvalue(nodeMinY / (contentHeight - viewport.getHeight()));
-        } else if (nodeMaxY > viewportMaxY) {
-            pane.setVvalue((nodeMaxY - viewport.getHeight()) / (contentHeight - viewport.getHeight()));
-        }
     }
 
     //-------------------- Listeners -----------------------------------------------------------------------------------
