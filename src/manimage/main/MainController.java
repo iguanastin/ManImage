@@ -306,24 +306,23 @@ public class MainController {
     }
 
     public void clearAllOnAction(ActionEvent event) {
-        try {
-            db.cleanDB();
-            preview(null);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+        d.setTitle("Clear Database");
+        d.setHeaderText("Erase all data in database?");
+        d.setContentText(" All data will be lost!");
+        Optional result = d.showAndWait();
+        if (result.get() == ButtonType.OK) {
+            try {
+                db.cleanDB();
+                preview(null);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
     public void onSearchButtonAction(ActionEvent event) {
         applySearchFilter();
-    }
-
-    public void searchPaneMouseEntered(MouseEvent event) {
-        searchVBox.setPrefHeight(searchPanePrefHeightMax);
-    }
-
-    public void searchPaneMouseExited(MouseEvent event) {
-        searchVBox.setPrefHeight(searchPanePrefHeightMin);
     }
 
     public void searchTagsTextFieldOnAction(ActionEvent event) {

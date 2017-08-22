@@ -49,7 +49,7 @@
             </Label>
         </SplitPane>
         <SplitPane dividerPositions="0.5" maxWidth="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefWidth="638.0">
-            <VBox fx:id="searchVBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseEntered="#searchPaneMouseEntered" onMouseExited="#searchPaneMouseExited" prefHeight="175.0" prefWidth="638.0">
+            <VBox fx:id="searchVBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="175.0" prefWidth="638.0">
                 <padding>
                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                 </padding>
