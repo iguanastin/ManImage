@@ -29,7 +29,7 @@ public class Main extends Application {
     };
     static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
 
-    static boolean isIDE = false;
+    private static boolean isIDE = false;
 
     //TODO: Redesign this GUI entirely
     /*Things to take into account:
@@ -66,15 +66,6 @@ public class Main extends Application {
         MainController mainController = loader.getController();
         mainController.setStage(mainStage);
         mainController.grid.updateSearchContents();
-
-        //-------------- Build SingleEditor stage ----------------------------------------------------------------------
-
-        Stage singleEditorStage = new Stage();
-        Parent singleEditorRoot;
-        if (isIDE) singleEditorRoot = FXMLLoader.load(getClass().getResource("../fxml/singleeditor.fxml"));
-        else singleEditorRoot = FXMLLoader.load(new URL("file:" + new File("fxml/singleeditor.fxml").getAbsolutePath()));
-        singleEditorStage.setScene(new Scene(singleEditorRoot));
-        singleEditorStage.setTitle("Edit Image");
     }
 
     public static void main(String[] args) throws MalformedURLException {
