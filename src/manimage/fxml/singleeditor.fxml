@@ -11,67 +11,50 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<SplitPane dividerPositions="0.5" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
-           prefHeight="400.0" prefWidth="511.0" xmlns="http://javafx.com/javafx/8.0.112"
-           xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.editors.SingleEditorController">
-    <items>
-        <SplitPane dividerPositions="0.5" orientation="VERTICAL">
-            <items>
-                <VBox spacing="5.0">
-                    <children>
-                        <Label text="Recently Used Tags"/>
-                        <ListView prefHeight="200.0" prefWidth="200.0"/>
-                        <HBox spacing="5.0">
-                            <children>
-                                <Button mnemonicParsing="false" onAction="#addTagActivated" text="Add Tag"/>
-                                <TextField fx:id="tagTextField" maxHeight="-Infinity" maxWidth="-Infinity"
-                                           minHeight="-Infinity" minWidth="-Infinity" onAction="#addTagActivated"
-                                           prefHeight="25.0" prefWidth="218.0" HBox.hgrow="NEVER"/>
-                            </children>
-                        </HBox>
-                        <HBox layoutX="10.0" layoutY="10.0" spacing="5.0">
-                            <children>
-                                <Label prefHeight="24.0" prefWidth="39.0" text="Source:"/>
-                                <TextField fx:id="sourceTextField" maxHeight="-Infinity" maxWidth="-Infinity"
-                                           minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0"
-                                           prefWidth="240.0" HBox.hgrow="NEVER"/>
-                            </children>
-                        </HBox>
-                        <HBox spacing="5.0">
-                            <children>
-                                <Label prefHeight="25.0" prefWidth="40.0" text="Rating:"/>
-                                <ComboBox fx:id="ratingComboBox" prefHeight="25.0" prefWidth="241.0"/>
-                            </children>
-                        </HBox>
-                    </children>
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-                    </padding>
-                </VBox>
-                <HBox maxHeight="45.0" spacing="5.0">
-                    <children>
-                        <Button mnemonicParsing="false" onAction="#acceptActivated" text="Accept"/>
-                        <Button mnemonicParsing="false" onAction="#cancelActivated" text="Cancel"/>
-                    </children>
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-                    </padding>
-                </HBox>
-            </items>
-        </SplitPane>
-        <SplitPane dividerPositions="0.5" maxWidth="200.0" orientation="VERTICAL">
-            <items>
-                <Label text="Tags">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                    </padding>
-                </Label>
-                <ScrollPane hbarPolicy="NEVER" vbarPolicy="ALWAYS">
-                    <content>
-                        <ListView prefHeight="400.0" prefWidth="178.0"/>
-                    </content>
-                </ScrollPane>
-            </items>
-        </SplitPane>
-    </items>
-</SplitPane>
+<HBox prefHeight="376.0" prefWidth="499.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="manimage.editors.SingleEditorController">
+    <VBox>
+        <VBox spacing="5.0">
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <Label text="Recently Used Tags"/>
+            <ListView prefHeight="200.0" prefWidth="200.0"/>
+            <HBox spacing="5.0">
+                <Button mnemonicParsing="false" onAction="#addTagActivated" text="Add Tag"/>
+                <TextField fx:id="tagTextField" maxHeight="-Infinity" maxWidth="-Infinity"
+                           minHeight="-Infinity" minWidth="-Infinity" onAction="#addTagActivated"
+                           prefHeight="25.0" prefWidth="218.0" HBox.hgrow="NEVER"/>
+            </HBox>
+            <HBox layoutX="10.0" layoutY="10.0" spacing="5.0">
+                <Label prefHeight="24.0" prefWidth="39.0" text="Source:"/>
+                <TextField fx:id="sourceTextField" maxHeight="-Infinity" maxWidth="-Infinity"
+                           minHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" prefWidth="240.0"
+                           HBox.hgrow="NEVER"/>
+            </HBox>
+            <HBox spacing="5.0">
+                <Label prefHeight="25.0" prefWidth="40.0" text="Rating:"/>
+                <ComboBox fx:id="ratingComboBox" prefHeight="25.0" prefWidth="241.0"/>
+            </HBox>
+        </VBox>
+        <HBox maxHeight="45.0" spacing="5.0">
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <Button mnemonicParsing="false" onAction="#acceptActivated" text="Accept"/>
+            <Button mnemonicParsing="false" onAction="#cancelActivated" text="Cancel"/>
+        </HBox>
+    </VBox>
+    <SplitPane dividerPositions="0.5" maxWidth="200.0" orientation="VERTICAL">
+        <Label text="Tags">
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </padding>
+        </Label>
+        <ScrollPane hbarPolicy="NEVER" vbarPolicy="ALWAYS">
+            <content>
+                <ListView prefHeight="400.0" prefWidth="178.0"/>
+            </content>
+        </ScrollPane>
+    </SplitPane>
+</HBox>

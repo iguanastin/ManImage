@@ -1,10 +1,10 @@
 package manimage.main;
 
-import manimage.common.ImageInfo;
+import manimage.common.ImgInfo;
 
 
 public interface PreviewListener {
 
-    void preview(ImageInfo image);
+    void preview(ImgInfo image);
 
 }

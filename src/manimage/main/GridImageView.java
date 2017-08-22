@@ -3,11 +3,11 @@ package manimage.main;
 
 import javafx.geometry.Insets;
 import javafx.scene.layout.BorderPane;
-import manimage.common.ImageInfo;
+import manimage.common.ImgInfo;
 
 public class GridImageView extends BorderPane {
 
-    private ImageInfo info;
+    private ImgInfo info;
 
     private DynamicImageView view;
 
@@ -17,27 +17,27 @@ public class GridImageView extends BorderPane {
     private static final String backgroundColor = "DDDDDD";
 
 
-    public GridImageView(ImageInfo info) {
+    public GridImageView(ImgInfo info) {
         this.info = info;
 
         setCenter(view = new DynamicImageView());
         setMargin(view, new Insets(5));
-        setMinSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
-        setMaxSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
+        setMinSize(ImgInfo.THUMBNAIL_SIZE, ImgInfo.THUMBNAIL_SIZE);
+        setMaxSize(ImgInfo.THUMBNAIL_SIZE, ImgInfo.THUMBNAIL_SIZE);
 
         setSelected(false);
     }
 
-    ImageInfo getInfo() {
+    ImgInfo getInfo() {
         return info;
     }
 
-    void setInfo(ImageInfo info) {
+    void setInfo(ImgInfo info) {
         this.info = info;
     }
 
-    void loadThumbnail(boolean backgroundLoading) {
-        view.setImage(info.getThumbnail(backgroundLoading));
+    void loadThumbnail() {
+        view.setImage(info.getThumbnail());
     }
 
     void unloadThumbnail() {

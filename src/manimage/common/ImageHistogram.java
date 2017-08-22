@@ -90,22 +90,4 @@ public final class ImageHistogram {
         return getSimilarity(other) >= confidence;
     }
 
-    public static ArrayList<SimilarPair> getDuplicates(ArrayList<ImageInfo> infos, double confidence) {
-        ArrayList<SimilarPair> results = new ArrayList<>();
-
-        for (int i = 0; i < infos.size(); i++) {
-            for (int j = i + 1; j < infos.size(); j++) {
-                ImageHistogram hist1 = infos.get(i).getHistogram(), hist2 = infos.get(j).getHistogram();
-                if (hist1 != null && hist2 != null) {
-                    double similarity = hist1.getSimilarity(hist2);
-                    if (similarity > confidence) {
-                        results.add(new SimilarPair(infos.get(i), infos.get(j), similarity));
-                    }
-                }
-            }
-        }
-
-        return results;
-    }
-
 }

@@ -1,8 +1,11 @@
 package manimage.main;
 
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -11,16 +14,17 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import manimage.common.ImageDatabase;
-import manimage.common.ImageDatabaseUpdateListener;
-import manimage.common.ImageInfo;
+import javafx.stage.Stage;
+import manimage.common.*;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpdateListener {
@@ -30,11 +34,19 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     private final ContextMenu contextMenu;
 
-    private String orderBy = ImageDatabase.SQL_IMAGE_TIME_ADDED + " DESC, " + ImageDatabase.SQL_IMAGE_ID + " DESC";
+    private String lastTagString = "";
+
+    private int[] searchRatings;
+    private String[] searchTags;
+    private String searchFilePath;
+    private String primaryOrder = "img_added";
+    private boolean primaryOrderDescending = true;
+    private String secondaryOrder = "img_id";
+    private boolean secondaryOrderDescending = true;
     private int pageLength = 100;
     private int pageNum = 0;
 
-    private ImageDatabase db;
+    private DBInterface db;
 
     private PreviewListener previewListener;
 
@@ -42,13 +54,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     //----------------- Constructors -----------------------------------------------------------------------------------
 
     public DatabaseImageGridPane() {
-
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
         MenuItem[] items = new MenuItem[10];
         items[0] = new MenuItem("Add Tag");
         items[0].setOnAction(event -> {
-            //TODO: Implement tag adding
+            openTagEditorDialog();
         });
 
         items[1] = new MenuItem("View Info");
@@ -73,7 +84,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         items[4].setOnAction(event -> {
             if (getFirstSelected() != null) {
                 try {
-                    Desktop.getDesktop().open(new File(getFirstSelected().getInfo().getPath()));
+                    Desktop.getDesktop().open(getFirstSelected().getInfo().getPath());
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -161,7 +172,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return result;
     }
 
-    ImageDatabase getImageDatabase() {
+    DBInterface getDatabase() {
         return db;
     }
 
@@ -186,7 +197,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         this.previewListener = previewListener;
     }
 
-    void setDatabase(ImageDatabase db) {
+    void setDatabase(DBInterface db) {
         if (this.db != null) {
             this.db.removeChangeListener(this);
         }
@@ -196,16 +207,53 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     }
 
     void setPage(int pageNum) {
-        if (this.pageNum != pageNum) {
-            this.pageNum = pageNum;
-            updateView();
-        }
+        this.pageNum = pageNum;
+        updateSearchContents();
+        unselectAll();
+        updateVisibleThumbnails();
     }
 
     void setPageLength(int pageLength) {
-        if (this.pageLength != pageLength) {
-            this.pageLength = pageLength;
-            updateView();
+        this.pageLength = pageLength;
+    }
+
+    void setPrimaryOrder(String primaryOrder) {
+        this.primaryOrder = primaryOrder;
+    }
+
+    void setPrimaryOrderDescending(boolean primaryOrderDescending) {
+        this.primaryOrderDescending = primaryOrderDescending;
+    }
+
+    void setSecondaryOrderDescending(boolean secondaryOrderDescending) {
+        this.secondaryOrderDescending = secondaryOrderDescending;
+    }
+
+    void setSecondaryOrder(String secondaryOrder) {
+        this.secondaryOrder = secondaryOrder;
+    }
+
+    void setOrderBy(String primaryOrder, boolean primaryDescending, String secondaryOrder, boolean secondaryDescending) {
+        this.primaryOrder = primaryOrder;
+        this.primaryOrderDescending = primaryDescending;
+        this.secondaryOrder = secondaryOrder;
+        this.secondaryOrderDescending = secondaryDescending;
+    }
+
+    void setSearchFilePath(String searchFilePath) {
+        this.searchFilePath = searchFilePath;
+    }
+
+    void setSearchRatings(int[] searchRatings) {
+        this.searchRatings = searchRatings;
+    }
+
+    void setSearchTags(String[] searchTags) {
+        this.searchTags = searchTags;
+        if (searchTags != null) {
+            if (searchTags.length == 0 || (searchTags.length == 1 && searchTags[0].isEmpty())) {
+                this.searchTags = null;
+            }
         }
     }
 
@@ -215,9 +263,17 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return selected.containsAll(imageViews);
     }
 
+    boolean isPrimaryOrderDescending() {
+        return primaryOrderDescending;
+    }
+
+    boolean isSecondaryOrderDescending() {
+        return secondaryOrderDescending;
+    }
+
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    private void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
+    public void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
             selected.clear();
         } else if (shiftDown && !selected.isEmpty()) {
@@ -242,7 +298,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         updateSelected();
     }
 
-    void unselectAll() {
+    public void unselectAll() {
         selected.clear();
         updateSelected();
     }
@@ -271,7 +327,8 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
         if (index >= imageViews.size()) index = imageViews.size() - 1;
 
-        if (!imageViews.get(index).isSelected() || selected.size() > 1) select(imageViews.get(index), shiftDown, controlDown);
+        if (!imageViews.get(index).isSelected() || selected.size() > 1)
+            select(imageViews.get(index), shiftDown, controlDown);
     }
 
     void selectUp(boolean shiftDown, boolean controlDown) {
@@ -280,7 +337,8 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
         if (index < 0) index = 0;
 
-        if (!imageViews.get(index).isSelected() || selected.size() > 1) select(imageViews.get(index), shiftDown, controlDown);
+        if (!imageViews.get(index).isSelected() || selected.size() > 1)
+            select(imageViews.get(index), shiftDown, controlDown);
     }
 
     void selectAll() {
@@ -293,25 +351,21 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     private void removeSelected() {
         if (db == null || !db.isConnected()) return;
         if (!selected.isEmpty()) {
-            selected.forEach(view -> view.getInfo().setToBeDeleted());
-            unselectAll();
+            final ArrayList<ImgInfo> imgs = new ArrayList<>();
+            selected.forEach(img -> imgs.add(img.getInfo()));
             try {
-                db.commitChanges();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+                db.removeImgs(imgs);
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+            unselectAll();
         }
     }
 
     private void setSelectedRating(byte newRating) {
         if (db == null || !db.isConnected()) return;
         if (!selected.isEmpty()) {
-            selected.forEach(view -> view.getInfo().setRating(newRating));
-            try {
-                db.commitChanges();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
+            //TODO: Set selected images rating
         }
     }
 
@@ -321,6 +375,38 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 //            new File(view.getInfo().getPath()).delete();
 //        });
         removeSelected();
+    }
+
+    public void openTagEditorDialog() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setHeaderText("List of tags to add separated by spaces. Prepend with '-' character to remove if present.");
+        dialog.setTitle("Tag Editor");
+        dialog.getEditor().setText(lastTagString);
+        dialog.getEditor().selectAll();
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            lastTagString = result.get().trim().replaceAll("( )+", " ");
+            ArrayList<ImgInfo> imgs = new ArrayList<>();
+            for (GridImageView view : selected) {
+                imgs.add(view.getInfo());
+            }
+            for (String tag : lastTagString.split(" ")) {
+                if (tag.charAt(0) == '-') {
+                    try {
+                        db.removeTag(imgs, tag.substring(1), true);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+                        db.addTag(imgs, tag, true);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            db.notifyChangeListeners();
+        }
     }
 
     //------------------------ Updaters --------------------------------------------------------------------------------
@@ -342,24 +428,21 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         for (GridImageView n : imageViews) {
             Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
             if (!n.isThumbnailLoaded() && scrollPaneBounds.intersects(nodeBounds)) {
-                n.loadThumbnail(true);
+                n.loadThumbnail();
                 updates++;
             }
         }
-
-        if (updates > 0) System.out.println("UpdateVisibleThumbs:\t" + updates);
     }
 
-    void updateView() {
+    void updateSearchContents() {
         if (db == null || !db.isConnected()) return;
         int added = 0, removed = 0, updated = 0;
 
         try {
-            String query = "SELECT * FROM " + ImageDatabase.SQL_IMAGES_TABLE + " ORDER BY " + orderBy + " OFFSET " + pageLength * pageNum + " LIMIT " + pageLength;
-            ArrayList<ImageInfo> images = db.getImages(query);
+            ArrayList<ImgInfo> images = db.getImages(pageLength, pageLength*pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchRatings, searchFilePath);
 
             int i = 0;
-            for (ImageInfo image : images) {
+            for (ImgInfo image : images) {
                 if (i >= imageViews.size()) {
                     createNewGridView(i, image);
                     added++;
@@ -383,23 +466,21 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             ex.printStackTrace();
         }
 
-        System.out.println("GridUpdateView:\t\tAdded " + added + ", Removed " + removed + ", Updated " + updated);
+//        System.out.println("GridUpdateView:\t\tAdded " + added + ", Removed " + removed + ", Updated " + updated);
 
         updateVisibleThumbnails();
     }
 
-    private GridImageView createNewGridView(int index, ImageInfo image) {
+    private GridImageView createNewGridView(int index, ImgInfo image) {
         GridImageView view = new GridImageView(image);
         view.setOnContextMenuRequested(event -> contextMenu.show(view, event.getScreenX(), event.getScreenY()));
         view.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY || !view.isSelected()) {
                 select(view, event.isShiftDown(), event.isControlDown());
             }
+            if (previewListener != null) previewListener.preview(view.getInfo());
 
             event.consume();
-        });
-        view.setOnMouseEntered(event -> {
-            if (previewListener != null) previewListener.preview(view.getInfo());
         });
         imageViews.add(view);
 
@@ -414,7 +495,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     @Override
     public void databaseUpdated() {
-        updateView();
+        updateSearchContents();
     }
 
 }
