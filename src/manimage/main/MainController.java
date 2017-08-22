@@ -58,7 +58,7 @@ public class MainController {
     private File lastFolder;
     private String[] orderByMap;
 
-    private String dbPath = System.getProperty("user.home") + "\\mi-db";
+    private String dbPath = System.getProperty("user.home") + "\\manimage";
     private String dbUser = "sa";
     private String dbPass = "";
 
