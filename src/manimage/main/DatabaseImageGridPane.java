@@ -113,7 +113,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     //------------------------ Getters ---------------------------------------------------------------------------------
 
-    private int getCount() {
+    int getCount() {
         return imageViews.size();
     }
 

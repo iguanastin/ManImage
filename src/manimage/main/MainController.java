@@ -137,7 +137,7 @@ public class MainController {
     private void preview(ImgInfo info) {
         if (info != null) {
             previewDynamicImageView.setImage(info.getImage());
-            previewTagsLabel.setText(String.join(" ", info.getTags()));
+            previewTagsLabel.setText(String.join(", ", info.getTags()));
         } else {
             previewDynamicImageView.setImage(null);
             previewTagsLabel.setText(null);
@@ -157,6 +157,11 @@ public class MainController {
         gridScrollPane.vvalueProperty().setValue(0);
 
         grid.updateSearchContents();
+        grid.requestFocus();
+        if (grid.getCount() > 0) {
+            grid.select((GridImageView) grid.getChildren().get(0), false, false);
+            preview(grid.getLastSelected().getInfo());
+        }
     }
 
     private static void ensureVisible(ScrollPane pane, Node node) {
@@ -370,20 +375,6 @@ public class MainController {
                 grid.selectAll();
             }
             event.consume();
-        } else if (event.getCode() == KeyCode.PAGE_DOWN) {
-            gridScrollPane.setVvalue(0);
-            grid.unselectAll();
-            grid.setPage(grid.getPage() + 1);
-            pageNumTextfield.setText(grid.getPage() + "");
-            event.consume();
-        } else if (event.getCode() == KeyCode.PAGE_UP) {
-            if (grid.getPage() > 0) {
-                gridScrollPane.setVvalue(0);
-                grid.unselectAll();
-                grid.setPage(grid.getPage() - 1);
-                pageNumTextfield.setText(grid.getPage() + "");
-                event.consume();
-            }
         } else if (event.getCode() == KeyCode.HOME) {
             if (!grid.getChildren().isEmpty()) {
                 grid.select((GridImageView) grid.getChildren().get(0), event.isShiftDown(), event.isControlDown());
@@ -396,11 +387,53 @@ public class MainController {
             }
         } else if (event.getCode() == KeyCode.END) {
             if (!grid.getChildren().isEmpty()) {
-                grid.select((GridImageView) grid.getChildren().get(grid.getChildren().size()-1), event.isShiftDown(), event.isControlDown());
+                grid.select((GridImageView) grid.getChildren().get(grid.getChildren().size() - 1), event.isShiftDown(), event.isControlDown());
                 if (grid.getLastSelected() != null) {
                     preview(grid.getLastSelected().getInfo());
                     ensureVisible(gridScrollPane, grid.getLastSelected());
                     grid.updateVisibleThumbnails();
+                }
+                event.consume();
+            }
+        } else if (event.isControlDown() && event.getCode() == KeyCode.PAGE_DOWN) {
+            gridScrollPane.setVvalue(0);
+            grid.unselectAll();
+            grid.setPage(grid.getPage() + 1);
+            pageNumTextfield.setText(grid.getPage() + "");
+            event.consume();
+        } else if (event.isControlDown() && event.getCode() == KeyCode.PAGE_UP) {
+            if (grid.getPage() > 0) {
+                gridScrollPane.setVvalue(0);
+                grid.unselectAll();
+                grid.setPage(grid.getPage() - 1);
+                pageNumTextfield.setText(grid.getPage() + "");
+                event.consume();
+            }
+        } else if (event.getCode() == KeyCode.PAGE_DOWN) {
+            if (!grid.getChildren().isEmpty()) {
+                int index = grid.getChildren().indexOf(grid.getLastSelected()) + 12;
+                if (index > grid.getChildren().size()) index = grid.getChildren().size() - 1;
+                if (grid.getLastSelected() != grid.getChildren().get(index)) {
+                    grid.select((GridImageView) grid.getChildren().get(index), event.isShiftDown(), event.isControlDown());
+                    if (grid.getLastSelected() != null) {
+                        preview(grid.getLastSelected().getInfo());
+                        ensureVisible(gridScrollPane, grid.getLastSelected());
+                        grid.updateVisibleThumbnails();
+                    }
+                }
+                event.consume();
+            }
+        } else if (event.getCode() == KeyCode.PAGE_UP) {
+            if (!grid.getChildren().isEmpty()) {
+                int index = grid.getChildren().indexOf(grid.getLastSelected()) - 12;
+                if (index < 0) index = 0;
+                if (grid.getLastSelected() != grid.getChildren().get(index)) {
+                    grid.select((GridImageView) grid.getChildren().get(index), event.isShiftDown(), event.isControlDown());
+                    if (grid.getLastSelected() != null) {
+                        preview(grid.getLastSelected().getInfo());
+                        ensureVisible(gridScrollPane, grid.getLastSelected());
+                        grid.updateVisibleThumbnails();
+                    }
                 }
                 event.consume();
             }
@@ -515,13 +548,12 @@ public class MainController {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setTitle("Help");
         a.setHeaderText("Hotkeys");
-        a.setContentText("Ctrl+E\tEdit tags of the selected images\n" +
-                "Ctrl+Q\tQuit ManImage\n" +
-                "Ctrl+R\tFocus the tag searchbar\n" +
-                "Ctrl+A\tSelect all/no images\n" +
-                "PgDown\tGo to next page\n" +
-                "PgUp\tGo to previous page\n" +
-                "");
+        a.setContentText("Ctrl+E\t\tEdit tags of the selected images\n" +
+                "Ctrl+Q\t\tQuit ManImage\n" +
+                "Ctrl+R\t\tFocus the tag searchbar\n" +
+                "Ctrl+A\t\tSelect all/no images\n" +
+                "Ctrl+PgDwn\tGo to next page\n" +
+                "Ctrl+PgUp\tGo to previous page");
         a.showAndWait();
     }
 
