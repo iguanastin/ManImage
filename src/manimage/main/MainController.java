@@ -62,9 +62,6 @@ public class MainController {
     private String dbUser = "sa";
     private String dbPass = "";
 
-    private static final int searchPanePrefHeightMax = 175;
-    private static final int searchPanePrefHeightMin = 45;
-
 
     //---------------------- Initializers ------------------------------------------------------------------------------
 
@@ -146,7 +143,7 @@ public class MainController {
         }
     }
 
-    void backupDatabase() {
+    private void backupDatabase() {
         try {
             File cur = new File(dbPath + ".mv.db");
             File bak1 = new File(dbPath + ".mv.db.bak");
@@ -299,7 +296,14 @@ public class MainController {
             }
             event.consume();
         } else if (event.getCode() == KeyCode.DELETE) {
-            //TODO: Delete all selected
+            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+            d.setTitle("Forget Files");
+            d.setHeaderText("Remove these files from the database permanently?");
+            d.setContentText("This action cannot be undone!");
+            Optional result = d.showAndWait();
+            if (result.get() == ButtonType.OK) {
+                grid.removeSelected();
+            }
         } else if (event.isControlDown() && event.getCode() == KeyCode.A) {
             if (grid.areAllSelected()) {
                 grid.unselectAll();

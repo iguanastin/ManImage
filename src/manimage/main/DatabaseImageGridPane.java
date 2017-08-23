@@ -56,43 +56,18 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     public DatabaseImageGridPane() {
         //--------------------- Context Menu ---------------------------------------------------------------------------
 
-        MenuItem[] items = new MenuItem[10];
-        items[0] = new MenuItem("Add Tag");
-        items[0].setOnAction(event -> {
+        MenuItem[] items = new MenuItem[7];
+
+        items[0] = new MenuItem("View Info");
+
+        items[1] = new MenuItem("Add Tag");
+        items[1].setOnAction(event -> {
             openTagEditorDialog();
         });
-
-        items[1] = new MenuItem("View Info");
         //TODO: Implement info viewing
 
-        items[2] = new Menu("Set Rating...");
-        MenuItem r1 = new MenuItem("★");
-        r1.setOnAction(event -> setSelectedRating((byte) 1));
-        MenuItem r2 = new MenuItem("★★");
-        r2.setOnAction(event -> setSelectedRating((byte) 2));
-        MenuItem r3 = new MenuItem("★★★");
-        r3.setOnAction(event -> setSelectedRating((byte) 3));
-        MenuItem r4 = new MenuItem("★★★★");
-        r4.setOnAction(event -> setSelectedRating((byte) 4));
-        MenuItem r5 = new MenuItem("★★★★★");
-        r5.setOnAction(event -> setSelectedRating((byte) 5));
-        ((Menu) items[2]).getItems().addAll(r1, r2, r3, r4, r5);
-
-        items[3] = new SeparatorMenuItem();
-
-        items[4] = new MenuItem("Open");
-        items[4].setOnAction(event -> {
-            if (getFirstSelected() != null) {
-                try {
-                    Desktop.getDesktop().open(getFirstSelected().getInfo().getPath());
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-
-        items[5] = new MenuItem("View in Folder");
-        items[5].setOnAction(event -> {
+        items[2] = new MenuItem("View in Folder");
+        items[2].setOnAction(event -> {
             if (!selected.isEmpty()) {
                 try {
                     Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getPath());
@@ -102,15 +77,33 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             }
         });
 
-        items[6] = new SeparatorMenuItem();
+        items[3] = new SeparatorMenuItem();
 
-        items[7] = new MenuItem("Remove");
-        items[7].setOnAction(event -> removeSelected());
+        items[4] = new MenuItem("Forget");
+        items[4].setOnAction(event -> {
+            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+            d.setTitle("Forget Files");
+            d.setHeaderText("Remove these files from the database permanently?");
+            d.setContentText("This action cannot be undone!");
+            Optional result = d.showAndWait();
+            if (result.get() == ButtonType.OK) {
+                removeSelected();
+            }
+        });
 
-        items[8] = new SeparatorMenuItem();
+        items[5] = new SeparatorMenuItem();
 
-        items[9] = new MenuItem("Delete File");
-        items[9].setOnAction(event -> deleteSelected());
+        items[6] = new MenuItem("Delete Files");
+        items[6].setOnAction(event -> {
+            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+            d.setTitle("Delete Files");
+            d.setHeaderText("Delete these files permanently?");
+            d.setContentText("This action cannot be undone!");
+            Optional result = d.showAndWait();
+            if (result.get() == ButtonType.OK) {
+                deleteSelected();
+            }
+        });
 
         contextMenu = new ContextMenu(items);
 
@@ -271,7 +264,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    public void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
+    void select(GridImageView view, boolean shiftDown, boolean ctrlDown) {
         if (view == null) {
             selected.clear();
         } else if (shiftDown && !selected.isEmpty()) {
@@ -296,7 +289,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         updateSelected();
     }
 
-    public void unselectAll() {
+    void unselectAll() {
         selected.clear();
         updateSelected();
     }
@@ -346,7 +339,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         updateSelected();
     }
 
-    private void removeSelected() {
+    void removeSelected() {
         if (db == null || !db.isConnected()) return;
         if (!selected.isEmpty()) {
             final ArrayList<ImgInfo> imgs = new ArrayList<>();
@@ -360,22 +353,15 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         }
     }
 
-    private void setSelectedRating(byte newRating) {
+    void deleteSelected() {
         if (db == null || !db.isConnected()) return;
-        if (!selected.isEmpty()) {
-            //TODO: Set selected images rating
-        }
-    }
-
-    private void deleteSelected() {
-        if (db == null || !db.isConnected()) return;
-//        selected.forEach(view -> {
-//            new File(view.getInfo().getPath()).delete();
-//        });
+        selected.forEach(view -> {
+            view.getInfo().getPath().delete();
+        });
         removeSelected();
     }
 
-    public void openTagEditorDialog() {
+    void openTagEditorDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setHeaderText("List of tags to add separated by spaces. Prepend with '-' character to remove if present.");
         dialog.setTitle("Tag Editor");
