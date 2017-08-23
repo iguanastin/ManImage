@@ -19,13 +19,10 @@ import manimage.common.ImgInfo;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
@@ -49,7 +46,7 @@ public class MainController {
     public Button prevPageButton;
     public Button nextPageButton;
     public TextField pageNumTextfield;
-    public SplitPane scenePane;
+    public SplitPane rootPane;
 
     private DBInterface db;
     private Stage stage;
@@ -91,13 +88,13 @@ public class MainController {
         secondaryOrderByChoiceBox.setValue(items.get(0));
         secondaryOrderByDescendingToggle.setSelected(grid.isSecondaryOrderDescending());
 
-        scenePane.setOnDragOver(event -> {
+        rootPane.setOnDragOver(event -> {
             if (event.getGestureSource() == null && (event.getDragboard().hasFiles() || event.getDragboard().hasUrl())) {
                 event.acceptTransferModes(TransferMode.ANY);
             }
             event.consume();
         });
-        scenePane.setOnDragDropped(event -> {
+        rootPane.setOnDragDropped(event -> {
             if (event.getDragboard().hasFiles()) {
                 addFiles(event.getDragboard().getFiles());
             } else if (event.getDragboard().hasUrl()) {
@@ -140,7 +137,7 @@ public class MainController {
     private void preview(ImgInfo info) {
         if (info != null) {
             previewDynamicImageView.setImage(info.getImage());
-            previewTagsLabel.setText(Arrays.toString(info.getTags()));
+            previewTagsLabel.setText(String.join(" ", info.getTags()));
         } else {
             previewDynamicImageView.setImage(null);
             previewTagsLabel.setText(null);
@@ -157,6 +154,7 @@ public class MainController {
         //Set page
         grid.setPage(0);
         pageNumTextfield.setText("0");
+        gridScrollPane.vvalueProperty().setValue(0);
 
         grid.updateSearchContents();
     }
@@ -300,7 +298,11 @@ public class MainController {
     }
 
     public void aboutMenuActivated(ActionEvent event) {
-
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setContentText("a\nb\nc\nd\ne");
+        a.setTitle("About");
+        a.setHeaderText("ManImage");
+        a.showAndWait();
     }
 
     public void gridScrollPaneClicked(MouseEvent event) {
@@ -341,14 +343,26 @@ public class MainController {
             }
             event.consume();
         } else if (event.getCode() == KeyCode.DELETE) {
-            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-            d.setTitle("Forget Files");
-            d.setHeaderText("Remove these files from the database permanently?");
-            d.setContentText("This action cannot be undone!");
-            Optional result = d.showAndWait();
-            if (result.get() == ButtonType.OK) {
-                grid.removeSelected();
+            if (event.isControlDown()) {
+                Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+                d.setTitle("Forget Files");
+                d.setHeaderText("Remove these files from the database permanently?");
+                d.setContentText("This action cannot be undone!");
+                Optional result = d.showAndWait();
+                if (result.get() == ButtonType.OK) {
+                    grid.removeSelected();
+                }
+            } else {
+                Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+                d.setTitle("Delete Files");
+                d.setHeaderText("Delete these files permanently?");
+                d.setContentText("This action cannot be undone!");
+                Optional result = d.showAndWait();
+                if (result.get() == ButtonType.OK) {
+                    grid.deleteSelected();
+                }
             }
+            event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.A) {
             if (grid.areAllSelected()) {
                 grid.unselectAll();
@@ -361,15 +375,38 @@ public class MainController {
             grid.unselectAll();
             grid.setPage(grid.getPage() + 1);
             pageNumTextfield.setText(grid.getPage() + "");
+            event.consume();
         } else if (event.getCode() == KeyCode.PAGE_UP) {
             if (grid.getPage() > 0) {
                 gridScrollPane.setVvalue(0);
                 grid.unselectAll();
                 grid.setPage(grid.getPage() - 1);
                 pageNumTextfield.setText(grid.getPage() + "");
+                event.consume();
+            }
+        } else if (event.getCode() == KeyCode.HOME) {
+            if (!grid.getChildren().isEmpty()) {
+                grid.select((GridImageView) grid.getChildren().get(0), event.isShiftDown(), event.isControlDown());
+                if (grid.getLastSelected() != null) {
+                    preview(grid.getLastSelected().getInfo());
+                    ensureVisible(gridScrollPane, grid.getLastSelected());
+                    grid.updateVisibleThumbnails();
+                }
+                event.consume();
+            }
+        } else if (event.getCode() == KeyCode.END) {
+            if (!grid.getChildren().isEmpty()) {
+                grid.select((GridImageView) grid.getChildren().get(grid.getChildren().size()-1), event.isShiftDown(), event.isControlDown());
+                if (grid.getLastSelected() != null) {
+                    preview(grid.getLastSelected().getInfo());
+                    ensureVisible(gridScrollPane, grid.getLastSelected());
+                    grid.updateVisibleThumbnails();
+                }
+                event.consume();
             }
         } else if (event.isControlDown() && event.getCode() == KeyCode.E) {
             grid.openTagEditorDialog();
+            event.consume();
         }
     }
 
@@ -420,8 +457,8 @@ public class MainController {
         }
         if (page < 0) {
             page = 0;
-        } else if (page > numImages/grid.getPageLength()) {
-            page = numImages/grid.getPageLength();
+        } else if (page > numImages / grid.getPageLength()) {
+            page = numImages / grid.getPageLength();
         }
         grid.setPage(page);
         pageNumTextfield.setText(Integer.toString(page));
@@ -438,8 +475,8 @@ public class MainController {
         }
         if (page < 0) {
             page = 0;
-        } else if (page > numImages/grid.getPageLength()) {
-            page = numImages/grid.getPageLength();
+        } else if (page > numImages / grid.getPageLength()) {
+            page = numImages / grid.getPageLength();
         }
         grid.setPage(page);
         pageNumTextfield.setText(Integer.toString(page));
@@ -457,13 +494,42 @@ public class MainController {
         }
         if (page < 0) {
             page = 0;
-        } else if (page > numImages/grid.getPageLength()) {
-            page = numImages/grid.getPageLength();
+        } else if (page > numImages / grid.getPageLength()) {
+            page = numImages / grid.getPageLength();
         }
         grid.setPage(page);
         pageNumTextfield.setText(Integer.toString(page));
         if (!grid.getChildren().isEmpty()) ensureVisible(gridScrollPane, grid.getChildren().get(0));
         grid.updateVisibleThumbnails();
+    }
+
+    public void rootPaneKeyPressed(KeyEvent event) {
+        if (event.isControlDown() && event.getCode() == KeyCode.Q) {
+            Platform.exit();
+        } else if (event.isControlDown() && event.getCode() == KeyCode.R) {
+            searchTagsTextfield.requestFocus();
+        }
+    }
+
+    public void hotkeysMenuActivated(ActionEvent event) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle("Help");
+        a.setHeaderText("Hotkeys");
+        a.setContentText("Ctrl+E\tEdit tags of the selected images\n" +
+                "Ctrl+Q\tQuit ManImage\n" +
+                "Ctrl+R\tFocus the tag searchbar\n" +
+                "Ctrl+A\tSelect all/no images\n" +
+                "PgDown\tGo to next page\n" +
+                "PgUp\tGo to previous page\n" +
+                "");
+        a.showAndWait();
+    }
+
+    public void searchPaneKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.ESCAPE) {
+            grid.requestFocus();
+            event.consume();
+        }
     }
 
 }

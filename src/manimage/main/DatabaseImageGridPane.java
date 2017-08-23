@@ -349,6 +349,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             }
             unselectAll();
         }
+        if (previewListener != null) previewListener.preview(null);
     }
 
     void deleteSelected() {
@@ -357,6 +358,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             view.getInfo().getPath().delete();
         });
         removeSelected();
+        if (previewListener != null) previewListener.preview(null);
     }
 
     void openTagEditorDialog() {
