@@ -55,12 +55,17 @@ public class MainController {
     private File lastSaveFolder;
     private String[] orderByMap;
 
-    private String dbPath = System.getProperty("user.home") + "\\manimage";
+    private final String dbPath;
     private String dbUser = "sa";
     private String dbPass = "";
 
     static final ClipboardContent clipboard = new ClipboardContent();
 
+
+    public MainController() {
+        if (System.getProperty("os.name").contains("Windows")) dbPath = System.getProperty("user.home") + "\\manimage";
+        else dbPath = System.getProperty("user.home") + "/manimage";
+    }
 
     //---------------------- Initializers ------------------------------------------------------------------------------
 
@@ -197,12 +202,15 @@ public class MainController {
     }
 
     private void addFiles(List<File> files) {
-        if (files != null) {
-            files.removeIf(file -> !file.exists() || !Main.IMAGE_FILTER.accept(file));
+        if (files != null && !files.isEmpty()) {
+            ArrayList<File> work = new ArrayList<>();
+            files.forEach(file -> {
+                if (file.exists() && Main.IMAGE_FILTER.accept(file)) work.add(file);
+            });
             DBInterface db = grid.getDatabase();
 
             try {
-                db.addBatchImages(files);
+                db.addBatchImages(work);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
