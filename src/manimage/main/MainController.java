@@ -134,7 +134,7 @@ public class MainController {
 
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    private void preview(ImgInfo info) {
+    void preview(ImgInfo info) {
         if (info != null) {
             previewDynamicImageView.setImage(info.getImage());
             previewTagsLabel.setText(String.join(", ", info.getTags()));

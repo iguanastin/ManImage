@@ -176,11 +176,11 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return index;
     }
 
-    public int getPage() {
+    int getPage() {
         return pageNum;
     }
 
-    public int getPageLength() {
+    int getPageLength() {
         return pageLength;
     }
 
@@ -204,26 +204,6 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         updateSearchContents();
         unselectAll();
         updateVisibleThumbnails();
-    }
-
-    void setPageLength(int pageLength) {
-        this.pageLength = pageLength;
-    }
-
-    void setPrimaryOrder(String primaryOrder) {
-        this.primaryOrder = primaryOrder;
-    }
-
-    void setPrimaryOrderDescending(boolean primaryOrderDescending) {
-        this.primaryOrderDescending = primaryOrderDescending;
-    }
-
-    void setSecondaryOrderDescending(boolean secondaryOrderDescending) {
-        this.secondaryOrderDescending = secondaryOrderDescending;
-    }
-
-    void setSecondaryOrder(String secondaryOrder) {
-        this.secondaryOrder = secondaryOrder;
     }
 
     void setOrderBy(String primaryOrder, boolean primaryDescending, String secondaryOrder, boolean secondaryDescending) {
@@ -347,9 +327,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            unselectAll();
+//            unselectAll();
         }
-        if (previewListener != null) previewListener.preview(null);
+        if (previewListener != null) {
+            if (getLastSelected() == null) previewListener.preview(null);
+            else previewListener.preview(getLastSelected().getInfo());
+        }
     }
 
     void deleteSelected() {

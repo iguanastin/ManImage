@@ -69,6 +69,10 @@ public class Main extends Application {
         MainController mainController = loader.getController();
         mainController.setStage(mainStage);
         mainController.grid.updateSearchContents();
+        if (mainController.grid.getCount() > 0) {
+            mainController.grid.select((GridImageView) mainController.grid.getChildren().get(0), false, false);
+            mainController.preview(mainController.grid.getLastSelected().getInfo());
+        }
     }
 
     public static void main(String[] args) throws MalformedURLException {

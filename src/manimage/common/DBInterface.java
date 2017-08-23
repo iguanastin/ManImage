@@ -115,7 +115,7 @@ public class DBInterface {
         return results;
     }
 
-    private synchronized void addImage(@NotNull String path, String src, int rating, String tags, boolean isBatch) throws SQLException {
+    private synchronized void addImage(@NotNull String path, String src, String tags, boolean isBatch) throws SQLException {
         ArrayList<String> columns = new ArrayList<>();
         ArrayList<String> values = new ArrayList<>();
 
@@ -133,8 +133,6 @@ public class DBInterface {
             columns.add("img_src");
             values.add("'" + src + "'");
         }
-        columns.add("img_rating");
-        values.add(Integer.toString(rating));
         columns.add("img_added");
         values.add(Long.toString(System.currentTimeMillis()));
         if (tags != null && !tags.isEmpty()) {
@@ -148,12 +146,12 @@ public class DBInterface {
     }
 
     public synchronized void addImage(@NotNull String path) throws SQLException {
-        addImage(path, null, 0, " tagme ", false);
+        addImage(path, null, " tagme ", false);
     }
 
     public synchronized void addBatchImages(Iterable<File> files) throws SQLException {
         for (File file : files) {
-            addImage(file.getAbsolutePath(), null, 0, " tagme ", true);
+            addImage(file.getAbsolutePath(), null, " tagme ", true);
         }
 
         notifyChangeListeners();
