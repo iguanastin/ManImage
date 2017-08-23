@@ -2,7 +2,6 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
@@ -21,7 +20,7 @@
 <?import manimage.main.DatabaseImageGridPane?>
 <?import manimage.main.DynamicImageView?>
 
-<SplitPane dividerPositions="1.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.MainController">
+<SplitPane fx:id="scenePane" dividerPositions="1.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.MainController">
     <MenuBar>
         <Menu mnemonicParsing="false" text="File">
             <MenuItem mnemonicParsing="false" onAction="#addFilesClicked" text="Add File(s)" />
@@ -49,7 +48,7 @@
             </Label>
         </SplitPane>
         <SplitPane dividerPositions="0.5" maxWidth="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefWidth="638.0">
-            <VBox fx:id="searchVBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="175.0" prefWidth="638.0">
+            <VBox fx:id="searchVBox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="150.0" prefWidth="638.0">
                 <padding>
                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                 </padding>
@@ -69,21 +68,6 @@
                     </padding>
                     <Label prefHeight="25.0" prefWidth="45.0" text="Filepath:" />
                     <TextField fx:id="searchPathTextfield" onAction="#searchPathTextFieldOnAction" prefHeight="25.0" prefWidth="569.0" promptText="Filepath contains - Case sensitive" />
-                </HBox>
-                <HBox spacing="5.0">
-                    <VBox.margin>
-                        <Insets />
-                    </VBox.margin>
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                    <Label text="Rating:" />
-                    <CheckBox fx:id="ratingNoneCheckbox" mnemonicParsing="false" selected="true" text="None" />
-                    <CheckBox fx:id="ratingOneCheckbox" layoutX="15.0" layoutY="15.0" mnemonicParsing="false" selected="true" text="★" />
-                    <CheckBox fx:id="ratingTwoCheckbox" layoutX="53.0" layoutY="15.0" mnemonicParsing="false" selected="true" text="★★" />
-                    <CheckBox fx:id="ratingThreeCheckbox" layoutX="109.0" layoutY="15.0" mnemonicParsing="false" selected="true" text="★★★" />
-                    <CheckBox fx:id="ratingFourCheckbox" layoutX="159.0" layoutY="15.0" mnemonicParsing="false" selected="true" text="★★★★" />
-                    <CheckBox fx:id="ratingFiveCheckbox" layoutX="221.0" layoutY="15.0" mnemonicParsing="false" selected="true" text="★★★★★" />
                 </HBox>
                 <HBox spacing="5.0">
                     <padding>
@@ -129,7 +113,7 @@
                         <Button fx:id="nextPageButton" mnemonicParsing="false" onAction="#nextPageButtonOnAction" text="Next" translateX="-235.0" BorderPane.alignment="CENTER" />
                     </right>
                     <center>
-                        <TextField fx:id="pageNumTextfield" maxWidth="-Infinity" onAction="#pageNumTextfieldOnAction" text="0" prefHeight="25.0" prefWidth="80.0" BorderPane.alignment="CENTER" />
+                        <TextField fx:id="pageNumTextfield" maxWidth="-Infinity" onAction="#pageNumTextfieldOnAction" prefHeight="25.0" prefWidth="80.0" text="0" BorderPane.alignment="CENTER" />
                     </center>
                 </BorderPane>
             </SplitPane>

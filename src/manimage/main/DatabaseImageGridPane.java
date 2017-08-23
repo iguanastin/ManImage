@@ -1,5 +1,6 @@
 package manimage.main;
 
+import javafx.event.*;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
@@ -10,7 +11,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
@@ -36,7 +39,6 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     private String lastTagString = "";
 
-    private int[] searchRatings;
     private String[] searchTags;
     private String searchFilePath;
     private String primaryOrder = "img_added";
@@ -235,10 +237,6 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         this.searchFilePath = searchFilePath;
     }
 
-    void setSearchRatings(int[] searchRatings) {
-        this.searchRatings = searchRatings;
-    }
-
     void setSearchTags(String[] searchTags) {
         this.searchTags = searchTags;
         if (searchTags != null) {
@@ -423,7 +421,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         int added = 0, removed = 0, updated = 0;
 
         try {
-            ArrayList<ImgInfo> images = db.getImages(pageLength, pageLength*pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchRatings, searchFilePath);
+            ArrayList<ImgInfo> images = db.getImages(pageLength, pageLength*pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchFilePath);
 
             int i = 0;
             for (ImgInfo image : images) {
@@ -466,6 +464,15 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
             event.consume();
         });
+        view.setOnDragDetected(event -> {
+            Dragboard db = view.startDragAndDrop(TransferMode.ANY);
+            ArrayList<File> files = new ArrayList<>();
+            selected.forEach(item -> files.add(item.getInfo().getPath()));
+            MainController.clipboard.putFiles(files);
+            db.setContent(MainController.clipboard);
+            event.consume();
+        });
+        view.setOnDragDone(javafx.event.Event::consume);
         imageViews.add(view);
 
         //Add new row if not enough present

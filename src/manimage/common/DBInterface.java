@@ -12,7 +12,7 @@ import java.util.ListIterator;
 
 public class DBInterface {
 
-    private static final String SQL_INITIALIZE_TABLES = "CREATE TABLE imgs(img_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, img_path NVARCHAR(1024) UNIQUE, img_src NVARCHAR(1024), img_rating TINYINT NOT NULL DEFAULT(0), img_added LONG NOT NULL, img_tags NVARCHAR(1024));";
+    private static final String SQL_INITIALIZE_TABLES = "CREATE TABLE imgs(img_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, img_path NVARCHAR(1024) UNIQUE, img_src NVARCHAR(1024), img_added LONG NOT NULL, img_tags NVARCHAR(1024));";
 
     private final Connection connection;
     private final Statement statement;
@@ -31,9 +31,9 @@ public class DBInterface {
         verifyTables();
     }
 
-    public synchronized void verifyTables() throws SQLException {
+    private synchronized void verifyTables() throws SQLException {
         System.out.println("Attempting to verify table...");
-        if (!tableExists("imgs", "img_id", "img_path", "img_src", "img_rating", "img_added", "img_tags")) {
+        if (!tableExists("imgs", "img_id", "img_path", "img_src", "img_added", "img_tags")) {
             dropTables();
             System.out.println("Initializing tables...");
             statement.executeUpdate(SQL_INITIALIZE_TABLES);
@@ -41,12 +41,12 @@ public class DBInterface {
         System.out.println("Tables successfully verified");
     }
 
-    public synchronized void dropTables() throws SQLException {
+    private synchronized void dropTables() throws SQLException {
         System.out.println("Attempting to drop tables...");
         statement.executeUpdate("DROP TABLE IF EXISTS imgs;");
     }
 
-    public synchronized boolean tableExists(String name, String... columns) {
+    private synchronized boolean tableExists(String name, String... columns) {
         try {
             statement.executeQuery("SELECT TOP 1 " + String.join(",", columns) + " FROM " + name);
             return true;
@@ -55,24 +55,12 @@ public class DBInterface {
         }
     }
 
-    public synchronized ArrayList<ImgInfo> getImages(int limit, int offset, OrderBy order, String[] tags, int[] ratings, String pathContains) throws SQLException {
+    public synchronized ArrayList<ImgInfo> getImages(int limit, int offset, OrderBy order, String[] tags, String pathContains) throws SQLException {
         StringBuilder query = new StringBuilder("SELECT imgs.* FROM imgs ");
 
         String ratingSQL = null;
         String tagsSQL = null;
         String pathSQL = null;
-
-        //Ratings search
-        if (ratings != null && ratings.length > 0) {
-            ratingSQL = "(";
-            boolean or = false;
-            for (int i : ratings) {
-                if (or) ratingSQL += " OR ";
-                ratingSQL += "img_rating=" + i;
-                or = true;
-            }
-            ratingSQL += ")";
-        }
 
         //Tags search
         if (tags != null && tags.length > 0) {
@@ -127,7 +115,7 @@ public class DBInterface {
         return results;
     }
 
-    public synchronized void addImage(@NotNull String path, String src, int rating, String tags, boolean isBatch) throws SQLException {
+    private synchronized void addImage(@NotNull String path, String src, int rating, String tags, boolean isBatch) throws SQLException {
         ArrayList<String> columns = new ArrayList<>();
         ArrayList<String> values = new ArrayList<>();
 

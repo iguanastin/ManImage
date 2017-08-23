@@ -8,10 +8,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -20,7 +17,14 @@ import manimage.common.DBInterface;
 import manimage.common.ImgInfo;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -41,26 +45,24 @@ public class MainController {
     public ToggleButton secondaryOrderByDescendingToggle;
     public TextField searchPathTextfield;
     public TextField searchTagsTextfield;
-    public CheckBox ratingNoneCheckbox;
-    public CheckBox ratingOneCheckbox;
-    public CheckBox ratingTwoCheckbox;
-    public CheckBox ratingThreeCheckbox;
-    public CheckBox ratingFourCheckbox;
-    public CheckBox ratingFiveCheckbox;
     public VBox searchVBox;
     public Button prevPageButton;
     public Button nextPageButton;
     public TextField pageNumTextfield;
+    public SplitPane scenePane;
 
     private DBInterface db;
     private Stage stage;
 
     private File lastFolder;
+    private File lastSaveFolder;
     private String[] orderByMap;
 
     private String dbPath = System.getProperty("user.home") + "\\manimage";
     private String dbUser = "sa";
     private String dbPass = "";
+
+    static final ClipboardContent clipboard = new ClipboardContent();
 
 
     //---------------------- Initializers ------------------------------------------------------------------------------
@@ -88,6 +90,49 @@ public class MainController {
         secondaryOrderByChoiceBox.setItems(items);
         secondaryOrderByChoiceBox.setValue(items.get(0));
         secondaryOrderByDescendingToggle.setSelected(grid.isSecondaryOrderDescending());
+
+        scenePane.setOnDragOver(event -> {
+            if (event.getGestureSource() == null && (event.getDragboard().hasFiles() || event.getDragboard().hasUrl())) {
+                event.acceptTransferModes(TransferMode.ANY);
+            }
+            event.consume();
+        });
+        scenePane.setOnDragDropped(event -> {
+            if (event.getDragboard().hasFiles()) {
+                addFiles(event.getDragboard().getFiles());
+            } else if (event.getDragboard().hasUrl()) {
+                FileChooser fc = new FileChooser();
+                fc.setTitle("Save Image As");
+                fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
+                fc.setInitialFileName(event.getDragboard().getUrl().substring(event.getDragboard().getUrl().lastIndexOf("/") + 1));
+                fc.setInitialDirectory(lastSaveFolder);
+                File target = fc.showSaveDialog(stage);
+
+                if (target != null) {
+                    try {
+                        HttpURLConnection conn = (HttpURLConnection) new URL(event.getDragboard().getUrl()).openConnection();
+                        conn.addRequestProperty("User-Agent", "Mozilla/4.0");
+                        ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+                        FileOutputStream fos = new FileOutputStream(target);
+                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+                        lastSaveFolder = target.getParentFile();
+
+                        try {
+                            db.addImage(target.getAbsolutePath());
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Alert a = new Alert(Alert.AlertType.ERROR);
+                        a.setContentText("Error saving file from url: " + e.getLocalizedMessage());
+                        a.showAndWait();
+                    }
+                }
+            }
+            event.consume();
+        });
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
@@ -109,19 +154,6 @@ public class MainController {
         grid.setSearchTags(searchTagsTextfield.getText().split(" "));
         //Set filepath
         grid.setSearchFilePath(searchPathTextfield.getText());
-        //Set rating
-        ArrayList<Integer> ratings = new ArrayList<>(6);
-        if (ratingNoneCheckbox.isSelected()) ratings.add(0);
-        if (ratingOneCheckbox.isSelected()) ratings.add(1);
-        if (ratingTwoCheckbox.isSelected()) ratings.add(2);
-        if (ratingThreeCheckbox.isSelected()) ratings.add(3);
-        if (ratingFourCheckbox.isSelected()) ratings.add(4);
-        if (ratingFiveCheckbox.isSelected()) ratings.add(5);
-        int[] ratingArr = new int[ratings.size()];
-        for (int i = 0; i < ratingArr.length; i++) {
-            ratingArr[i] = ratings.get(i);
-        }
-        grid.setSearchRatings(ratingArr);
         //Set page
         grid.setPage(0);
         pageNumTextfield.setText("0");
@@ -161,6 +193,54 @@ public class MainController {
         }
     }
 
+    private void addFiles(List<File> files) {
+        if (files != null) {
+            files.removeIf(file -> !file.exists() || !Main.IMAGE_FILTER.accept(file));
+            DBInterface db = grid.getDatabase();
+
+            try {
+                db.addBatchImages(files);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            lastFolder = files.get(0).getParentFile();
+        }
+    }
+
+    private void addFolder(File folder) {
+        if (folder != null) {
+            DBInterface db = grid.getDatabase();
+            File[] files = folder.listFiles(Main.IMAGE_FILTER);
+            if (files == null) return;
+            try {
+                db.addBatchImages(Arrays.asList(files));
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            lastFolder = folder.getParentFile();
+        }
+    }
+
+    private void addRecurseFolder(File folder) {
+        if (folder != null) {
+            final DBInterface db = grid.getDatabase();
+
+            final ArrayList<File> files = new ArrayList<>();
+            for (File fldr : getSubFolders(folder)) {
+                files.addAll(Arrays.asList(fldr.listFiles(Main.IMAGE_FILTER)));
+            }
+            try {
+                db.addBatchImages(files);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            lastFolder = folder.getParentFile();
+        }
+    }
+
     //--------------------- Getters ------------------------------------------------------------------------------------
 
     private ArrayList<File> getSubFolders(File folder) {
@@ -194,17 +274,7 @@ public class MainController {
         fc.setInitialDirectory(lastFolder);
         List<File> files = fc.showOpenMultipleDialog(stage);
 
-        if (files != null) {
-            DBInterface db = grid.getDatabase();
-
-            try {
-                db.addBatchImages(files);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            lastFolder = files.get(0).getParentFile();
-        }
+        addFiles(files);
     }
 
     public void addFolderClicked(ActionEvent event) {
@@ -213,18 +283,7 @@ public class MainController {
         dc.setInitialDirectory(lastFolder);
         File folder = dc.showDialog(stage);
 
-        if (folder != null) {
-            DBInterface db = grid.getDatabase();
-            File[] files = folder.listFiles(Main.IMAGE_FILTER);
-            if (files == null) return;
-            try {
-                db.addBatchImages(Arrays.asList(files));
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            lastFolder = folder.getParentFile();
-        }
+        addFolder(folder);
     }
 
     public void addRecurseFolderClicked(ActionEvent event) {
@@ -233,21 +292,7 @@ public class MainController {
         dc.setInitialDirectory(lastFolder);
         final File folder = dc.showDialog(stage);
 
-        if (folder != null) {
-            final DBInterface db = grid.getDatabase();
-
-            final ArrayList<File> files = new ArrayList<>();
-            for (File fldr : getSubFolders(folder)) {
-                files.addAll(Arrays.asList(fldr.listFiles(Main.IMAGE_FILTER)));
-            }
-            try {
-                db.addBatchImages(files);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            lastFolder = folder.getParentFile();
-        }
+        addRecurseFolder(folder);
     }
 
     public void exitClicked(ActionEvent event) {
