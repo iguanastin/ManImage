@@ -19,7 +19,7 @@ public class DBInterface {
 
     private final ArrayList<ImageDatabaseUpdateListener> listeners = new ArrayList<>();
 
-    final private ArrayList<SoftReference<ImgInfo>> imgs = new ArrayList<>();
+    final private ArrayList<SoftReference<ImageInfo>> imgs = new ArrayList<>();
 
 
     public DBInterface(String path, String username, String password) throws SQLException {
@@ -55,7 +55,7 @@ public class DBInterface {
         }
     }
 
-    public synchronized ArrayList<ImgInfo> getImages(int limit, int offset, OrderBy order, String[] tags, String pathContains) throws SQLException {
+    public synchronized ArrayList<ImageInfo> getImages(int limit, int offset, OrderBy order, String[] tags, String pathContains) throws SQLException {
         StringBuilder query = new StringBuilder("SELECT imgs.* FROM imgs ");
 
         String ratingSQL = null;
@@ -101,11 +101,11 @@ public class DBInterface {
         query.append(";");
         ResultSet rs = statement.executeQuery(query.toString());
 
-        ArrayList<ImgInfo> results = new ArrayList<>();
+        ArrayList<ImageInfo> results = new ArrayList<>();
         while (rs.next()) {
-            ImgInfo img = getCachedImg(rs.getInt("img_id"));
+            ImageInfo img = getCachedImg(rs.getInt("img_id"));
             if (img == null) {
-                img = new ImgInfo(rs.getInt("img_id"), rs.getLong("img_added"), rs.getNString("img_src"), rs.getNString("img_path"), imgTagsStringToArray(rs.getNString("img_tags")));
+                img = new ImageInfo(rs.getInt("img_id"), rs.getLong("img_added"), rs.getNString("img_src"), rs.getNString("img_path"), imgTagsStringToArray(rs.getNString("img_tags")));
             } else {
                 img.update(rs.getNString("img_src"), rs.getNString("img_path"), imgTagsStringToArray(rs.getNString("img_tags")));
             }
@@ -157,8 +157,8 @@ public class DBInterface {
         notifyChangeListeners();
     }
 
-    public synchronized void addTag(Iterable<ImgInfo> imgs, String tag, boolean isBatch) throws SQLException {
-        for (ImgInfo img : imgs) {
+    public synchronized void addTag(Iterable<ImageInfo> imgs, String tag, boolean isBatch) throws SQLException {
+        for (ImageInfo img : imgs) {
             if (!Arrays.asList(img.getTags()).contains(tag)) {
                 img.addTag(tag);
                 statement.addBatch("UPDATE imgs SET img_tags='" + imgTagsArrayToString(img.getTags()) + "' WHERE img_id=" + img.getId() + ";");
@@ -169,8 +169,8 @@ public class DBInterface {
         if (!isBatch) notifyChangeListeners();
     }
 
-    public synchronized void removeTag(Iterable<ImgInfo> imgs, String tag, boolean isBatch) throws SQLException {
-        for (ImgInfo img : imgs) {
+    public synchronized void removeTag(Iterable<ImageInfo> imgs, String tag, boolean isBatch) throws SQLException {
+        for (ImageInfo img : imgs) {
             if (Arrays.asList(img.getTags()).contains(tag)) {
                 img.removeTag(tag);
                 statement.addBatch("UPDATE imgs SET img_tags='" + imgTagsArrayToString(img.getTags()) + "' WHERE img_id=" + img.getId() + ";");
@@ -220,10 +220,10 @@ public class DBInterface {
         listeners.forEach(ImageDatabaseUpdateListener::databaseUpdated);
     }
 
-    private synchronized ImgInfo getCachedImg(int id) {
-        ListIterator<SoftReference<ImgInfo>> iter = imgs.listIterator();
+    private synchronized ImageInfo getCachedImg(int id) {
+        ListIterator<SoftReference<ImageInfo>> iter = imgs.listIterator();
         while (iter.hasNext()) {
-            ImgInfo info = iter.next().get();
+            ImageInfo info = iter.next().get();
             if (info != null) {
                 if (info.getId() == id) {
                     return info;
@@ -236,8 +236,8 @@ public class DBInterface {
         return null;
     }
 
-    public synchronized void removeImgs(Iterable<ImgInfo> imgs) throws SQLException {
-        for (ImgInfo img : imgs) {
+    public synchronized void removeImgs(Iterable<ImageInfo> imgs) throws SQLException {
+        for (ImageInfo img : imgs) {
             statement.addBatch("DELETE FROM imgs WHERE img_id=" + img.getId());
         }
         statement.executeBatch();

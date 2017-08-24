@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Date;
 
-public class ImgInfo {
+public class ImageInfo {
 
     private int id;
     private long added;
@@ -24,7 +24,7 @@ public class ImgInfo {
 
     public static final int THUMBNAIL_SIZE = 150;
 
-    public ImgInfo(int id, long added, String src, String path, String[] tags) {
+    public ImageInfo(int id, long added, String src, String path, String[] tags) {
         this.id = id;
         this.added = added;
         if (path != null) this.path = new File(path);
@@ -48,6 +48,17 @@ public class ImgInfo {
             }
         }
         this.tags = tags;
+    }
+
+    public ImageHistogram getHistogram() {
+        if (histogram != null) return histogram;
+
+        try {
+            histogram = ImageHistogram.getHistogram(getImage());
+        } catch (HistogramReadException e) {
+            e.printStackTrace();
+        }
+        return histogram;
     }
 
     public Image getThumbnail() {

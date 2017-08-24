@@ -1,25 +1,16 @@
 package manimage.main;
 
-import com.sun.deploy.uitoolkit.DragContext;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.*;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import manimage.common.DBInterface;
-import manimage.common.ImgInfo;
-import manimage.common.OrderBy;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.SQLException;
-import java.util.Optional;
 
 public class Main extends Application {
 

@@ -14,7 +14,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import manimage.common.DBInterface;
-import manimage.common.ImgInfo;
+import manimage.common.ImageInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,8 +56,8 @@ public class MainController {
     private String[] orderByMap;
 
     private final String dbPath;
-    private String dbUser = "sa";
-    private String dbPass = "";
+    private final String dbUser = "sa";
+    private final String dbPass = "";
 
     static final ClipboardContent clipboard = new ClipboardContent();
 
@@ -139,7 +139,7 @@ public class MainController {
 
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    void preview(ImgInfo info) {
+    void preview(ImageInfo info) {
         if (info != null) {
             previewDynamicImageView.setImage(info.getImage());
             previewTagsLabel.setText(String.join(", ", info.getTags()));
