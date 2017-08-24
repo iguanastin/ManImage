@@ -78,6 +78,8 @@ public class MainController {
             db = new DBInterface(dbPath, dbUser, dbPass);
         } catch (SQLException ex) {
             ex.printStackTrace();
+            Main.showErrorMessage("Error!", "Database is already in use and cannot be opened", ex.getLocalizedMessage());
+            Platform.exit();
         }
 
         grid.setPreviewListener(this::preview);
@@ -127,9 +129,7 @@ public class MainController {
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
-                        Alert a = new Alert(Alert.AlertType.ERROR);
-                        a.setContentText("Error saving file from url: " + e.getLocalizedMessage());
-                        a.showAndWait();
+                        Main.showErrorMessage("Error!", "Error saving file from URL", e.getMessage());
                     }
                 }
             }
@@ -157,16 +157,11 @@ public class MainController {
         //Set filepath
         grid.setSearchFilePath(searchPathTextfield.getText());
         //Set page
-        grid.setPage(0);
-        pageNumTextfield.setText("0");
-        gridScrollPane.vvalueProperty().setValue(0);
+        setPage(0);
 
         grid.updateSearchContents();
         grid.requestFocus();
-        if (grid.getCount() > 0) {
-            grid.select((GridImageView) grid.getChildren().get(0), false, false);
-            preview(grid.getLastSelected().getInfo());
-        }
+        showImage(grid.selectFirst(false, false));
     }
 
     private static void ensureVisible(ScrollPane pane, Node node) {
@@ -252,6 +247,31 @@ public class MainController {
         }
     }
 
+    private void showImage(GridImageView last) {
+        if (last != null) {
+            preview(last.getInfo());
+            ensureVisible(gridScrollPane, last);
+            grid.updateVisibleThumbnails();
+        }
+    }
+
+    private void nextPage() {
+        setPage(grid.getPage() + 1);
+    }
+
+    private void previousPage() {
+        setPage(grid.getPage() - 1);
+    }
+
+    private void setPage(int i) {
+        if (i >= 0) {
+            grid.setPage(i);
+            pageNumTextfield.setText(grid.getPage() + "");
+            grid.unselectAll();
+            showImage(grid.selectFirst(false, false));
+        }
+    }
+
     //--------------------- Getters ------------------------------------------------------------------------------------
 
     private ArrayList<File> getSubFolders(File folder) {
@@ -324,54 +344,24 @@ public class MainController {
 
     public void gridScrollPaneKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.LEFT) {
-            grid.selectLeft(event.isShiftDown(), event.isControlDown());
-            if (grid.getLastSelected() != null) {
-                preview(grid.getLastSelected().getInfo());
-                ensureVisible(gridScrollPane, grid.getLastSelected());
-                grid.updateVisibleThumbnails();
-            }
+            showImage(grid.selectLeft(1, event.isShiftDown(), event.isControlDown()));
             event.consume();
         } else if (event.getCode() == KeyCode.RIGHT) {
-            grid.selectRight(event.isShiftDown(), event.isControlDown());
-            if (grid.getLastSelected() != null) {
-                preview(grid.getLastSelected().getInfo());
-                ensureVisible(gridScrollPane, grid.getLastSelected());
-                grid.updateVisibleThumbnails();
-            }
+            showImage(grid.selectRight(1, event.isShiftDown(), event.isControlDown()));
             event.consume();
         } else if (event.getCode() == KeyCode.DOWN) {
-            grid.selectDown(event.isShiftDown(), event.isControlDown());
-            if (grid.getLastSelected() != null) {
-                preview(grid.getLastSelected().getInfo());
-                ensureVisible(gridScrollPane, grid.getLastSelected());
-                grid.updateVisibleThumbnails();
-            }
+            showImage(grid.selectDown(1, event.isShiftDown(), event.isControlDown()));
             event.consume();
         } else if (event.getCode() == KeyCode.UP) {
-            grid.selectUp(event.isShiftDown(), event.isControlDown());
-            if (grid.getLastSelected() != null) {
-                preview(grid.getLastSelected().getInfo());
-                ensureVisible(gridScrollPane, grid.getLastSelected());
-                grid.updateVisibleThumbnails();
-            }
+            showImage(grid.selectUp(1, event.isShiftDown(), event.isControlDown()));
             event.consume();
         } else if (event.getCode() == KeyCode.DELETE) {
             if (event.isControlDown()) {
-                Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-                d.setTitle("Forget Files");
-                d.setHeaderText("Remove these files from the database permanently?");
-                d.setContentText("This action cannot be undone!");
-                Optional result = d.showAndWait();
-                if (result.get() == ButtonType.OK) {
+                if (Main.getUserConfirmation("Forget Files", "Remove these files from the database permanently?", "This action cannot be undone!")) {
                     grid.removeSelected();
                 }
             } else {
-                Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-                d.setTitle("Delete Files");
-                d.setHeaderText("Delete these files permanently?");
-                d.setContentText("This action cannot be undone!");
-                Optional result = d.showAndWait();
-                if (result.get() == ButtonType.OK) {
+                if (Main.getUserConfirmation("Delete Files", "Delete these files permanently?", "This action cannot be undone!")) {
                     grid.deleteSelected();
                 }
             }
@@ -384,67 +374,23 @@ public class MainController {
             }
             event.consume();
         } else if (event.getCode() == KeyCode.HOME) {
-            if (!grid.getChildren().isEmpty()) {
-                grid.select((GridImageView) grid.getChildren().get(0), event.isShiftDown(), event.isControlDown());
-                if (grid.getLastSelected() != null) {
-                    preview(grid.getLastSelected().getInfo());
-                    ensureVisible(gridScrollPane, grid.getLastSelected());
-                    grid.updateVisibleThumbnails();
-                }
-                event.consume();
-            }
+            showImage(grid.selectFirst(event.isShiftDown(), event.isControlDown()));
+            event.consume();
         } else if (event.getCode() == KeyCode.END) {
-            if (!grid.getChildren().isEmpty()) {
-                grid.select((GridImageView) grid.getChildren().get(grid.getChildren().size() - 1), event.isShiftDown(), event.isControlDown());
-                if (grid.getLastSelected() != null) {
-                    preview(grid.getLastSelected().getInfo());
-                    ensureVisible(gridScrollPane, grid.getLastSelected());
-                    grid.updateVisibleThumbnails();
-                }
-                event.consume();
-            }
+            showImage(grid.selectLast(event.isShiftDown(), event.isControlDown()));
+            event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.PAGE_DOWN) {
-            gridScrollPane.setVvalue(0);
-            grid.unselectAll();
-            grid.setPage(grid.getPage() + 1);
-            pageNumTextfield.setText(grid.getPage() + "");
+            nextPage();
             event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.PAGE_UP) {
-            if (grid.getPage() > 0) {
-                gridScrollPane.setVvalue(0);
-                grid.unselectAll();
-                grid.setPage(grid.getPage() - 1);
-                pageNumTextfield.setText(grid.getPage() + "");
-                event.consume();
-            }
+            previousPage();
+            event.consume();
         } else if (event.getCode() == KeyCode.PAGE_DOWN) {
-            if (!grid.getChildren().isEmpty()) {
-                int index = grid.getChildren().indexOf(grid.getLastSelected()) + 12;
-                if (index > grid.getChildren().size()) index = grid.getChildren().size() - 1;
-                if (grid.getLastSelected() != grid.getChildren().get(index)) {
-                    grid.select((GridImageView) grid.getChildren().get(index), event.isShiftDown(), event.isControlDown());
-                    if (grid.getLastSelected() != null) {
-                        preview(grid.getLastSelected().getInfo());
-                        ensureVisible(gridScrollPane, grid.getLastSelected());
-                        grid.updateVisibleThumbnails();
-                    }
-                }
-                event.consume();
-            }
+            showImage(grid.selectDown(3, event.isShiftDown(), event.isControlDown()));
+            event.consume();
         } else if (event.getCode() == KeyCode.PAGE_UP) {
-            if (!grid.getChildren().isEmpty()) {
-                int index = grid.getChildren().indexOf(grid.getLastSelected()) - 12;
-                if (index < 0) index = 0;
-                if (grid.getLastSelected() != grid.getChildren().get(index)) {
-                    grid.select((GridImageView) grid.getChildren().get(index), event.isShiftDown(), event.isControlDown());
-                    if (grid.getLastSelected() != null) {
-                        preview(grid.getLastSelected().getInfo());
-                        ensureVisible(gridScrollPane, grid.getLastSelected());
-                        grid.updateVisibleThumbnails();
-                    }
-                }
-                event.consume();
-            }
+            showImage(grid.selectUp(3, event.isShiftDown(), event.isControlDown()));
+            event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.E) {
             grid.openTagEditorDialog();
             event.consume();
@@ -490,58 +436,15 @@ public class MainController {
         } catch (NumberFormatException ex) {
             return;
         }
-        int numImages = 0;
-        try {
-            numImages = db.getNumImages();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (page < 0) {
-            page = 0;
-        } else if (page > numImages / grid.getPageLength()) {
-            page = numImages / grid.getPageLength();
-        }
-        grid.setPage(page);
-        pageNumTextfield.setText(Integer.toString(page));
-        if (!grid.getChildren().isEmpty()) ensureVisible(gridScrollPane, grid.getChildren().get(0));
+        setPage(page);
     }
 
     public void nextPageButtonOnAction(ActionEvent event) {
-        int page = grid.getPage() + 1;
-        int numImages = 0;
-        try {
-            numImages = db.getNumImages();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (page < 0) {
-            page = 0;
-        } else if (page > numImages / grid.getPageLength()) {
-            page = numImages / grid.getPageLength();
-        }
-        grid.setPage(page);
-        pageNumTextfield.setText(Integer.toString(page));
-        if (!grid.getChildren().isEmpty()) ensureVisible(gridScrollPane, grid.getChildren().get(0));
-        grid.updateVisibleThumbnails();
+        nextPage();
     }
 
     public void prevPageButtonOnAction(ActionEvent event) {
-        int page = grid.getPage() - 1;
-        int numImages = 0;
-        try {
-            numImages = db.getNumImages();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (page < 0) {
-            page = 0;
-        } else if (page > numImages / grid.getPageLength()) {
-            page = numImages / grid.getPageLength();
-        }
-        grid.setPage(page);
-        pageNumTextfield.setText(Integer.toString(page));
-        if (!grid.getChildren().isEmpty()) ensureVisible(gridScrollPane, grid.getChildren().get(0));
-        grid.updateVisibleThumbnails();
+        previousPage();
     }
 
     public void rootPaneKeyPressed(KeyEvent event) {

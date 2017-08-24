@@ -28,6 +28,7 @@
             <MenuItem mnemonicParsing="false" onAction="#addRecurseFolderClicked" text="Add Folders Recursively" />
             <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#clearAllOnAction" text="Clear All" />
+            <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#exitClicked" text="Exit" />
         </Menu>
         <Menu mnemonicParsing="false" text="Help">

@@ -5,10 +5,7 @@ import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.*;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -52,6 +49,22 @@ public class Main extends Application {
         CSS Styling?
         Pages
     */
+
+    static boolean getUserConfirmation(String title, String header, String content) {
+        Alert d = new Alert(Alert.AlertType.CONFIRMATION);
+        d.setTitle(title);
+        d.setHeaderText(header);
+        d.setContentText(content);
+        return d.showAndWait().get() == ButtonType.OK;
+    }
+
+    static void showErrorMessage(String title, String header, String content) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title);
+        a.setHeaderText(header);
+        a.setContentText(content);
+        a.showAndWait();
+    }
 
     @Override
     public void start(Stage mainStage) throws Exception {

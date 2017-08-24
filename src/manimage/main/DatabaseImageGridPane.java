@@ -83,12 +83,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
         items[4] = new MenuItem("Forget");
         items[4].setOnAction(event -> {
-            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-            d.setTitle("Forget Files");
-            d.setHeaderText("Remove these files from the database permanently?");
-            d.setContentText("This action cannot be undone!");
-            Optional result = d.showAndWait();
-            if (result.get() == ButtonType.OK) {
+            if (Main.getUserConfirmation("Forget Files", "Remove these files from the database permanently?", "This action cannot be undone!")) {
                 removeSelected();
             }
         });
@@ -97,12 +92,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
         items[6] = new MenuItem("Delete Files");
         items[6].setOnAction(event -> {
-            Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-            d.setTitle("Delete Files");
-            d.setHeaderText("Delete these files permanently?");
-            d.setContentText("This action cannot be undone!");
-            Optional result = d.showAndWait();
-            if (result.get() == ButtonType.OK) {
+            if (Main.getUserConfirmation("Delete Files", "Delete this files permanently?", "This action cannot be undone!")) {
                 deleteSelected();
             }
         });
@@ -115,6 +105,10 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     int getCount() {
         return imageViews.size();
+    }
+
+    public ArrayList<GridImageView> getImageViews() {
+        return imageViews;
     }
 
     private int columnWidth() {
@@ -272,42 +266,71 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         updateSelected();
     }
 
-    void selectLeft(boolean shiftDown, boolean controlDown) {
-        if (imageViews.isEmpty()) return;
-        int index = getCurrentSelectedIndex() - 1;
+    GridImageView selectLeft(int distance, boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+        for (int i = 0; i < distance; i++) {
+            int index = getCurrentSelectedIndex() - 1;
 
-        if (index >= 0) {
-            select(imageViews.get(index), shiftDown, controlDown);
+            if (index >= 0) {
+                select(imageViews.get(index), shiftDown, controlDown);
+            }
         }
+        return getLastSelected();
     }
 
-    void selectRight(boolean shiftDown, boolean controlDown) {
-        if (imageViews.isEmpty()) return;
-        int index = getCurrentSelectedIndex() + 1;
+    GridImageView selectRight(int distance, boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+        for (int i = 0; i < distance; i++) {
+            int index = getCurrentSelectedIndex() + 1;
 
-        if (index < imageViews.size()) {
-            select(imageViews.get(index), shiftDown, controlDown);
+            if (index < imageViews.size()) {
+                select(imageViews.get(index), shiftDown, controlDown);
+            }
         }
+
+        return getLastSelected();
     }
 
-    void selectDown(boolean shiftDown, boolean controlDown) {
-        if (imageViews.isEmpty()) return;
-        int index = getCurrentSelectedIndex() + columnWidth();
+    GridImageView selectDown(int distance, boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+        for (int i = 0; i < distance; i++) {
+            int index = getCurrentSelectedIndex() + columnWidth();
 
-        if (index >= imageViews.size()) index = imageViews.size() - 1;
+            if (index >= imageViews.size()) index = imageViews.size() - 1;
 
-        if (!imageViews.get(index).isSelected() || selected.size() > 1)
-            select(imageViews.get(index), shiftDown, controlDown);
+            if (!imageViews.get(index).isSelected() || selected.size() > 1)
+                select(imageViews.get(index), shiftDown, controlDown);
+        }
+
+        return getLastSelected();
     }
 
-    void selectUp(boolean shiftDown, boolean controlDown) {
-        if (imageViews.isEmpty()) return;
-        int index = getCurrentSelectedIndex() - columnWidth();
+    GridImageView selectUp(int distance, boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+        for (int i = 0; i < distance; i++) {
+            int index = getCurrentSelectedIndex() - columnWidth();
 
-        if (index < 0) index = 0;
+            if (index < 0) index = 0;
 
-        if (!imageViews.get(index).isSelected() || selected.size() > 1)
-            select(imageViews.get(index), shiftDown, controlDown);
+            if (!imageViews.get(index).isSelected() || selected.size() > 1)
+                select(imageViews.get(index), shiftDown, controlDown);
+        }
+
+        return getLastSelected();
+    }
+
+    GridImageView selectFirst(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+
+        select(imageViews.get(0), shiftDown, controlDown);
+        return imageViews.get(0);
+    }
+
+    GridImageView selectLast(boolean shiftDown, boolean controlDown) {
+        if (imageViews.isEmpty()) return null;
+
+        select(imageViews.get(imageViews.size()-1), shiftDown, controlDown);
+        return imageViews.get(imageViews.size()-1);
     }
 
     void selectAll() {
