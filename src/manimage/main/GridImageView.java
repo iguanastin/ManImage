@@ -2,7 +2,6 @@ package manimage.main;
 
 
 import javafx.geometry.Insets;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import manimage.common.ImageInfo;
 
@@ -26,12 +25,6 @@ public class GridImageView extends BorderPane {
         setMinSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
         setMaxSize(ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE);
 
-        setOnMouseEntered(event -> Main.mainController.preview(getInfo()));
-        setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) Main.mainController.grid.select(this, event.isShiftDown(), event.isControlDown());
-        });
-        view.setOnMouseClicked(getOnMouseClicked());
-
         setSelected(false);
     }
 
@@ -43,8 +36,8 @@ public class GridImageView extends BorderPane {
         this.info = info;
     }
 
-    void loadThumbnail(boolean backgroundLoading) {
-        view.setImage(info.getThumbnail(backgroundLoading));
+    void loadThumbnail() {
+        view.setImage(info.getThumbnail());
     }
 
     void unloadThumbnail() {

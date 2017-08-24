@@ -1,179 +1,122 @@
 package manimage.common;
 
 
-import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 
-import java.lang.ref.WeakReference;
+import java.io.File;
+import java.lang.ref.SoftReference;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Date;
 
 public class ImageInfo {
 
-    private WeakReference<Image> image;
-    private WeakReference<Image> thumbnail;
+    private int id;
+    private long added;
+    private URL src;
+    private File path;
+    private String[] tags;
+
+    private SoftReference<Image> image;
+    private SoftReference<Image> thumbnail;
     private ImageHistogram histogram;
 
-    private String path;
-    private String source;
-    private byte rating;
-    private final int id;
-    private final long timeAdded;
+    public static final int THUMBNAIL_SIZE = 150;
 
-    private boolean pathChanged = false, sourceChanged = false, ratingChanged = false;
-    private boolean inserted = false;
-    private boolean toBeInserted = false;
-    private boolean toBeDeleted = false;
-
-    public static final int THUMBNAIL_SIZE = 140;
-
-
-    public ImageInfo(int id, String path, String source, byte rating, long timeAdded) {
+    public ImageInfo(int id, long added, String src, String path, String[] tags) {
         this.id = id;
-        this.path = path;
-        this.source = source;
-        this.rating = rating;
-        this.timeAdded = timeAdded;
-        inserted = true;
-        toBeDeleted = false;
-        toBeInserted = false;
+        this.added = added;
+        if (path != null) this.path = new File(path);
+        if (src != null) try { this.src = new URL(src); } catch (MalformedURLException ex) { ex.printStackTrace(); }
+        this.tags = tags;
     }
 
-    public ImageInfo(int id, String path) {
-        this.id = id;
-        this.path = path;
-        this.source = null;
-        this.rating = 0;
-        this.timeAdded = System.currentTimeMillis();
-        inserted = false;
-        toBeDeleted = false;
-        toBeInserted = true;
+    public void update(String src, String path, String[] tags) {
+        if (path == null) {
+            this.path = null;
+        } else {
+            this.path = new File(path);
+        }
+        if (src == null) {
+            this.src = null;
+        } else {
+            try {
+                this.src = new URL(src);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        this.tags = tags;
     }
 
-    //-------------- Checkers ------------------------------------------------------------------------------------------
+    public ImageHistogram getHistogram() {
+        if (histogram != null) return histogram;
 
-    public synchronized boolean isChanged() {
-        return pathChanged || sourceChanged || ratingChanged;
+        try {
+            histogram = ImageHistogram.getHistogram(getImage());
+        } catch (HistogramReadException e) {
+            e.printStackTrace();
+        }
+        return histogram;
     }
 
-    public synchronized boolean isPathChanged() {
-        return pathChanged;
-    }
-
-    public synchronized boolean isRatingChanged() {
-        return ratingChanged;
-    }
-
-    public synchronized boolean isSourceChanged() {
-        return sourceChanged;
-    }
-
-    public boolean isInserted() {
-        return inserted;
-    }
-
-    public boolean isToBeDeleted() {
-        return toBeDeleted;
-    }
-
-    public boolean isToBeInserted() {
-        return toBeInserted;
-    }
-
-    //--------------- Getters ------------------------------------------------------------------------------------------
-
-    public synchronized Image getThumbnail(boolean backgroundLoading) {
-        if (thumbnail == null || thumbnail.get() == null)
-            thumbnail = new WeakReference<>(new Image("file:" + path, THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, backgroundLoading));
+    public Image getThumbnail() {
+        if (thumbnail == null || thumbnail.get() == null) {
+            Image img = new Image("file:" + path.getAbsolutePath(), THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, true);
+            thumbnail = new SoftReference<>(img);
+            return img;
+        }
 
         return thumbnail.get();
     }
 
-    public synchronized Image getImage(boolean backgroundLoading) {
+    public Image getImage() {
         if (image == null || image.get() == null) {
-            image = new WeakReference<>(new Image("file:" + path, backgroundLoading));
+            Image img = new Image("file:" + path.getAbsolutePath(), true);
+            image = new SoftReference<>(img);
+            return img;
         }
 
         return image.get();
     }
 
-    public synchronized ImageHistogram getHistogram() {
-        try {
-            if (histogram == null) histogram = ImageHistogram.getHistogram(getImage(false));
-        } catch (HistogramReadException ex){
-        }
-
-        return histogram;
-    }
-
-    public synchronized byte getRating() {
-        return rating;
-    }
-
-    public synchronized int getId() {
-        return id;
-    }
-
-    public synchronized long getTimeAdded() {
-        return timeAdded;
-    }
-
-    public synchronized String getSQLFriendlyPath() {
-        if (path == null) {
-            return null;
-        } else {
-            return path.replace("'", "''");
-        }
-    }
-
-    public synchronized  String getPath() {
+    public File getPath() {
         return path;
     }
 
-    public synchronized String getSQLFriendlySource() {
-        if (source == null) {
-            return null;
-        } else {
-            return source.replace("'", "''");
+    public String[] getTags() {
+        return tags;
+    }
+
+    public void addTag(String tag) {
+        tags = Arrays.copyOf(tags, tags.length + 1);
+        tags[tags.length - 1] = tag;
+    }
+
+    public void removeTag(String tag) {
+        String[] work = new String[tags.length - 1];
+        int i = 0;
+        for (String t : tags) {
+            if (!t.equalsIgnoreCase(tag)) {
+                work[i] = t;
+                i++;
+            }
         }
+        tags = work;
     }
 
-    public synchronized String getSource() {
-        return source;
+    public int getId() {
+        return id;
     }
 
-    //------------- Setters --------------------------------------------------------------------------------------------
-
-    public synchronized void setAsUpdated() {
-        pathChanged = sourceChanged = ratingChanged = toBeDeleted = toBeInserted = false;
+    public URL getSrc() {
+        return src;
     }
 
-    public synchronized void setSource(String source) {
-        if (this.source == null && source != null) sourceChanged = true;
-        else if (this.source != null && !this.source.equals(source)) sourceChanged = true;
-
-        this.source = source;
-    }
-
-    public synchronized void setRating(byte rating) {
-        if (this.rating != rating) ratingChanged = true;
-        this.rating = rating;
-    }
-
-    @NotNull
-    public synchronized void setPath(String path) {
-        if (!this.path.equals(path)) pathChanged = true;
-        this.path = path;
-    }
-
-    public void setInserted(boolean b) {
-        inserted = b;
-    }
-
-    public void setToBeDeleted(boolean toBeDeleted) {
-        this.toBeDeleted = toBeDeleted;
-    }
-
-    public void setToBeInserted(boolean toBeInserted) {
-        this.toBeInserted = toBeInserted;
+    @Override
+    public String toString() {
+        return new Date(added) + " - " + id + ": " + path;
     }
 
 }

@@ -17,8 +17,6 @@ public final class ImageHistogram {
 
 
     private ImageHistogram(Image image) throws HistogramReadException {
-        //TODO: Add image fingerprinting to check against image to see if histogram needs to be updated
-
         if (image.isBackgroundLoading()) {
             final Thread thisThread = Thread.currentThread();
             image.progressProperty().addListener((observable, oldValue, newValue) -> {
@@ -85,30 +83,11 @@ public final class ImageHistogram {
             db += Math.abs(blue[i] - other.blue[i]);
         }
 
-        //TODO: Test this method more and see what kinds of confidence values are best
-
         return 1 - (da + dr + dg + db) / 8;
     }
 
     public boolean isSimilar(ImageHistogram other, double confidence) {
         return getSimilarity(other) >= confidence;
-    }
-
-    public static ArrayList<ImageInfo> getDuplicates(ArrayList<ImageInfo> infos, double confidence) {
-        ArrayList<ImageInfo> results = new ArrayList<>();
-
-        //TODO: Modify to return a pair with an associated similarity
-
-        for (int i = 0; i < infos.size(); i++) {
-            for (int j = i + 1; j < infos.size(); j++) {
-                ImageHistogram hist1 = infos.get(i).getHistogram(), hist2 = infos.get(j).getHistogram();
-                if (hist1 != null && hist2 != null && hist1.isSimilar(hist2, confidence)) {
-                    results.add(infos.get(i));
-                }
-            }
-        }
-
-        return results;
     }
 
 }
