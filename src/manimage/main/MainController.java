@@ -86,10 +86,10 @@ public class MainController {
         grid.setDatabase(db);
         grid.setOrderBy("img_added", true, "img_id", true);
 
-        ObservableList<String> items = FXCollections.observableArrayList("ID", "Rating", "File path", "Time added", "Source URL");
-        orderByMap = new String[]{"img_id", "img_rating", "img_path", "img_added", "img_src"};
+        ObservableList<String> items = FXCollections.observableArrayList("ID", "File path", "Time added", "Source URL");
+        orderByMap = new String[]{"img_id", "img_path", "img_added", "img_src"};
         primaryOrderByChoiceBox.setItems(items);
-        primaryOrderByChoiceBox.setValue(items.get(3));
+        primaryOrderByChoiceBox.setValue(items.get(2));
         primaryOrderByDescendingToggle.setSelected(grid.isPrimaryOrderDescending());
         secondaryOrderByChoiceBox.setItems(items);
         secondaryOrderByChoiceBox.setValue(items.get(0));
