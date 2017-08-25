@@ -1,6 +1,7 @@
 package manimage.main;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.*;
 import javafx.scene.control.*;
@@ -23,7 +24,12 @@ public class Main extends Application {
         String name = file.getName().toLowerCase();
         return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif");
     };
-    static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image Files (*.png, *.jpg, *.jpeg, *.gif)", "*.png", "*.jpg", "*.jpeg", "*.gif");
+    static final FileFilter VIDEO_FILTER = file -> {
+        String name = file.getName().toLowerCase();
+        return name.endsWith(".mp4") || name.endsWith(".avi") || name.endsWith(".webm") || name.endsWith(".flv") || name.endsWith(".wmv") || name.endsWith(".3gp") || name.endsWith(".mov") || name.endsWith(".mpg");
+    };
+    static final FileFilter IMG_VID_FILTER = file -> IMAGE_FILTER.accept(file) || VIDEO_FILTER.accept(file);
+    static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image and Video Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.mp4", "*.avi", "*.webm", "*.flv", "*.wmv", "*.3gp", "*.mov", "*.mpg");
 
     private static boolean isIDE = false;
 
@@ -81,6 +87,11 @@ public class Main extends Application {
 
         MainController mainController = loader.getController();
         mainController.setStage(mainStage);
+
+        mainStage.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
     }
 
     public static void main(String[] args) {

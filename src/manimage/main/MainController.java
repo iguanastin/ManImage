@@ -1,26 +1,38 @@
 package manimage.main;
 
+import com.sun.jna.Memory;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.WritableImage;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
+import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.direct.BufferFormat;
+import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
+import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
+import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
@@ -50,6 +62,8 @@ public class MainController {
 
     private DBInterface db;
     private Stage stage;
+
+    private CanvasPlayerComponent mediaPlayerComponent;
 
     private File lastFolder;
     private File lastSaveFolder;
@@ -153,9 +167,31 @@ public class MainController {
     //------------------ Operators -------------------------------------------------------------------------------------
 
     void preview(ImageInfo info) {
+        if (mediaPlayerComponent != null) {
+            mediaPlayerComponent.getMediaPlayer().stop();
+            mediaPlayerComponent.getMediaPlayer().release();
+            mediaPlayerComponent.release();
+            mediaPlayerComponent = null;
+        }
+
         if (info != null) {
-            previewDynamicImageView.setImage(info.getImage());
-            previewTagsLabel.setText(String.join(", ", info.getTags()));
+            if (Main.IMAGE_FILTER.accept(info.getPath())) {
+                previewDynamicImageView.setImage(info.getImage());
+                previewTagsLabel.setText(String.join(", ", info.getTags()));
+            } else if (Main.VIDEO_FILTER.accept(info.getPath())) {
+                Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+                WritableImage img = new WritableImage((int) screen.getWidth(), (int) screen.getHeight());
+                //TODO: Fix video viewing aspect ratio
+                mediaPlayerComponent = new CanvasPlayerComponent(img);
+                previewDynamicImageView.setImage(img);
+                mediaPlayerComponent.getMediaPlayer().prepareMedia(info.getPath().getAbsolutePath());
+                mediaPlayerComponent.getMediaPlayer().start();
+                mediaPlayerComponent.getMediaPlayer().setRepeat(true);
+                previewTagsLabel.setText(String.join(", ", info.getTags()));
+            } else {
+                Main.showErrorMessage("Error", "Unsupported file extension", info.getPath().getAbsolutePath());
+                preview(null);
+            }
         } else {
             previewDynamicImageView.setImage(null);
             previewTagsLabel.setText(null);
@@ -213,7 +249,7 @@ public class MainController {
         if (files != null && !files.isEmpty()) {
             ArrayList<File> work = new ArrayList<>();
             files.forEach(file -> {
-                if (file.exists() && Main.IMAGE_FILTER.accept(file)) work.add(file);
+                if (file.exists() && Main.IMG_VID_FILTER.accept(file)) work.add(file);
             });
             DBInterface db = grid.getDatabase();
 
@@ -230,7 +266,7 @@ public class MainController {
     private void addFolder(File folder) {
         if (folder != null) {
             DBInterface db = grid.getDatabase();
-            File[] files = folder.listFiles(Main.IMAGE_FILTER);
+            File[] files = folder.listFiles(Main.IMG_VID_FILTER);
             if (files == null) return;
             try {
                 db.addBatchImages(Arrays.asList(files));
@@ -248,7 +284,7 @@ public class MainController {
 
             final ArrayList<File> files = new ArrayList<>();
             for (File fldr : getSubFolders(folder)) {
-                files.addAll(Arrays.asList(fldr.listFiles(Main.IMAGE_FILTER)));
+                files.addAll(Arrays.asList(fldr.listFiles(Main.IMG_VID_FILTER)));
             }
             try {
                 db.addBatchImages(files);
@@ -309,6 +345,47 @@ public class MainController {
         this.stage = stage;
     }
 
+    //------------------- Private classes ------------------------------------------------------------------------------
+
+    private class CanvasPlayerComponent extends DirectMediaPlayerComponent {
+
+        WritableImage img;
+        WritablePixelFormat<ByteBuffer> pixelFormat = PixelFormat.getByteBgraPreInstance();
+
+
+        CanvasPlayerComponent(WritableImage img) {
+            super(new CanvasBufferFormatCallback());
+            this.img = img;
+        }
+
+        @Override
+        public void display(DirectMediaPlayer mediaPlayer, Memory[] nativeBuffers, BufferFormat bufferFormat) {
+            if (img == null) {
+                return;
+            }
+            Platform.runLater(() -> {
+                Memory[] lock = mediaPlayer.lock();
+                try {
+                    if (lock != null) {
+                        Memory nativeBuffer = lock[0];
+                        ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
+                        img.getPixelWriter().setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
+                    }
+                } finally {
+                    mediaPlayer.unlock();
+                }
+            });
+        }
+    }
+
+    private class CanvasBufferFormatCallback implements BufferFormatCallback {
+        @Override
+        public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
+            Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+            return new RV32BufferFormat((int) screen.getWidth(), (int) screen.getHeight());
+        }
+    }
+
     //-------------------- Listeners -----------------------------------------------------------------------------------
 
     public void addFilesClicked(ActionEvent event) {
@@ -341,6 +418,7 @@ public class MainController {
 
     public void exitClicked(ActionEvent event) {
         Platform.exit();
+        System.exit(0);
     }
 
     public void aboutMenuActivated(ActionEvent event) {
@@ -468,6 +546,7 @@ public class MainController {
     public void rootPaneKeyPressed(KeyEvent event) {
         if (event.isControlDown() && event.getCode() == KeyCode.Q) {
             Platform.exit();
+            System.exit(0);
         } else if (event.isControlDown() && event.getCode() == KeyCode.R) {
             searchTagsTextfield.requestFocus();
         }
