@@ -13,23 +13,25 @@ public final class ImageHistogram {
     private final double[] green = new double[256];
     private final double[] blue = new double[256];
 
-    private final long pixelCount;
 
+    public ImageHistogram(final Image image) throws HistogramReadException {
+        if (image == null) throw new HistogramReadException("Cannot parse null image");
 
-    private ImageHistogram(Image image) throws HistogramReadException {
-        if (image.isBackgroundLoading()) {
-            final Thread thisThread = Thread.currentThread();
-            image.progressProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue.equals(1)) thisThread.notify(); //Notify this thread as soon as the image finishes loading
-            });
+//        if (image.isBackgroundLoading() && image.getProgress() != 1) {
+//            final Thread thisThread = Thread.currentThread();
+//            image.progressProperty().addListener((observable, oldValue, newValue) -> {
+//                if (newValue.equals(1)) thisThread.notify(); //Notify this thread as soon as the image finishes loading
+//            });
+//
+//            try {
+//                synchronized (thisThread) {
+//                    thisThread.wait();
+//                }
+//            } catch (InterruptedException e) {
+//            }
+//        }
 
-            try {
-                wait();
-            } catch (InterruptedException e) {
-            }
-        }
-
-        pixelCount = (long) (image.getWidth() * image.getHeight());
+        final long pixelCount = (long) (image.getWidth() * image.getHeight());
 
         for (int i = 0; i < 256; i++) {
             alpha[i] = red[i] = green[i] = blue[i] = 0;
@@ -56,21 +58,30 @@ public final class ImageHistogram {
         }
 
         for (int i = 0; i < 256; i++) {
-            alpha[i] /= getPixelCount();
-            red[i] /= getPixelCount();
-            green[i] /= getPixelCount();
-            blue[i] /= getPixelCount();
+            alpha[i] /= pixelCount;
+            red[i] /= pixelCount;
+            green[i] /= pixelCount;
+            blue[i] /= pixelCount;
         }
     }
 
-    public long getPixelCount() {
-        return pixelCount;
-    }
-
-    public static ImageHistogram getHistogram(Image image) throws HistogramReadException {
-        if (image == null) return null;
-
-        return new ImageHistogram(image);
+    public ImageHistogram(String parse) {
+        for (int i = 0; i < 256; i++) {
+            alpha[i] = Double.parseDouble(parse.substring(0, parse.indexOf(' ')));
+            parse = parse.substring(parse.indexOf(' ') + 1);
+        }
+        for (int i = 0; i < 256; i++) {
+            red[i] = Double.parseDouble(parse.substring(0, parse.indexOf(' ')));
+            parse = parse.substring(parse.indexOf(' ') + 1);
+        }
+        for (int i = 0; i < 256; i++) {
+            green[i] = Double.parseDouble(parse.substring(0, parse.indexOf(' ')));
+            parse = parse.substring(parse.indexOf(' ') + 1);
+        }
+        for (int i = 0; i < 256; i++) {
+            blue[i] = Double.parseDouble(parse.substring(0, parse.indexOf(' ')));
+            parse = parse.substring(parse.indexOf(' ') + 1);
+        }
     }
 
     public double getSimilarity(ImageHistogram other) {
@@ -88,6 +99,32 @@ public final class ImageHistogram {
 
     public boolean isSimilar(ImageHistogram other, double confidence) {
         return getSimilarity(other) >= confidence;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ImageHistogram) {
+            ImageHistogram hist = (ImageHistogram) obj;
+            if (hist == this) return true;
+
+            for (int i = 0; i < alpha.length; i++) {
+                if (hist.alpha[i] != alpha[i] || hist.red[i] != red[i] || hist.green[i] != green[i] || hist.blue[i] != blue[i]) return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (double d : alpha) sb.append(d).append(" ");
+        for (double d : red) sb.append(d).append(" ");
+        for (double d : green) sb.append(d).append(" ");
+        for (double d : blue) sb.append(d).append(" ");
+        return sb.toString();
     }
 
 }

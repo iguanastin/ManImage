@@ -4,8 +4,13 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.*;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import manimage.common.HistogramReadException;
+import manimage.common.ImageHistogram;
+import uk.co.caprica.vlcj.binding.LibVlc;
+import uk.co.caprica.vlcj.discovery.NativeDiscovery;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -59,6 +64,10 @@ public class Main extends Application {
 
     @Override
     public void start(Stage mainStage) throws Exception {
+        //--------------- Discover VLC natives -------------------------------------------------------------------------
+
+        new NativeDiscovery().discover();
+        System.out.println("Native VLCLibs Version: " + LibVlc.INSTANCE.libvlc_get_version());
 
         //------------ Build main stage --------------------------------------------------------------------------------
 
@@ -72,14 +81,9 @@ public class Main extends Application {
 
         MainController mainController = loader.getController();
         mainController.setStage(mainStage);
-        mainController.grid.updateSearchContents();
-        if (mainController.grid.getCount() > 0) {
-            mainController.grid.select((GridImageView) mainController.grid.getChildren().get(0), false, false);
-            mainController.preview(mainController.grid.getLastSelected().getInfo());
-        }
     }
 
-    public static void main(String[] args) throws MalformedURLException {
+    public static void main(String[] args) {
         for (String arg : args) {
             if (arg.equalsIgnoreCase("ide")) {
                 isIDE = true;

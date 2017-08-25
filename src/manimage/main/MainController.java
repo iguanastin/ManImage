@@ -135,6 +135,15 @@ public class MainController {
             }
             event.consume();
         });
+
+        Platform.runLater(() -> {
+
+            grid.updateSearchContents();
+            if (grid.getCount() > 0) {
+                grid.select(grid.getImageViews().get(0), false, false);
+                preview(grid.getLastSelected().getInfo());
+            }
+        });
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
@@ -393,6 +402,11 @@ public class MainController {
             event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.E) {
             grid.openTagEditorDialog();
+            event.consume();
+        } else if (event.isControlDown() && event.getCode() == KeyCode.H) {
+            for (GridImageView view : grid.getSelected()) {
+                System.out.println(view.getInfo().getHistogram().getSimilarity(grid.getLastSelected().getInfo().getHistogram()));
+            }
             event.consume();
         }
     }

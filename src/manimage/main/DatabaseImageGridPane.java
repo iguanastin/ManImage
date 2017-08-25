@@ -170,6 +170,10 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return pageLength;
     }
 
+    public ArrayList<GridImageView> getSelected() {
+        return selected;
+    }
+
     //------------------ Setters ---------------------------------------------------------------------------------------
 
     void setPreviewListener(PreviewListener previewListener) {

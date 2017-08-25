@@ -54,7 +54,7 @@ public class ImageInfo {
         if (histogram != null) return histogram;
 
         try {
-            histogram = ImageHistogram.getHistogram(getImage());
+            histogram = new ImageHistogram(getImage());
         } catch (HistogramReadException e) {
             e.printStackTrace();
         }
