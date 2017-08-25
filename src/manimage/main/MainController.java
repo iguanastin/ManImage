@@ -167,7 +167,7 @@ public class MainController {
     //------------------ Operators -------------------------------------------------------------------------------------
 
     void preview(ImageInfo info) {
-        if (mediaPlayerComponent != null) {
+        if (Main.supportVideo && mediaPlayerComponent != null) {
             mediaPlayerComponent.getMediaPlayer().stop();
             mediaPlayerComponent.getMediaPlayer().release();
             mediaPlayerComponent.release();
@@ -178,7 +178,7 @@ public class MainController {
             if (Main.IMAGE_FILTER.accept(info.getPath())) {
                 previewDynamicImageView.setImage(info.getImage());
                 previewTagsLabel.setText(String.join(", ", info.getTags()));
-            } else if (Main.VIDEO_FILTER.accept(info.getPath())) {
+            } else if (Main.supportVideo && Main.VIDEO_FILTER.accept(info.getPath())) {
                 Rectangle2D screen = Screen.getPrimary().getVisualBounds();
                 WritableImage img = new WritableImage((int) screen.getWidth(), (int) screen.getHeight());
                 //TODO: Fix video viewing aspect ratio

@@ -33,6 +33,8 @@ public class Main extends Application {
 
     private static boolean isIDE = false;
 
+    public static boolean supportVideo = true;
+
     //TODO: Redesign this GUI entirely
     /*Things to take into account:
         Batched editing
@@ -72,8 +74,11 @@ public class Main extends Application {
     public void start(Stage mainStage) throws Exception {
         //--------------- Discover VLC natives -------------------------------------------------------------------------
 
-        new NativeDiscovery().discover();
-        System.out.println("Native VLCLibs Version: " + LibVlc.INSTANCE.libvlc_get_version());
+        if (new NativeDiscovery().discover()) {
+            System.out.println("Native VLCLibs Version: " + LibVlc.INSTANCE.libvlc_get_version());
+        } else {
+            supportVideo = false;
+        }
 
         //------------ Build main stage --------------------------------------------------------------------------------
 
