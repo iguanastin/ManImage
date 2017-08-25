@@ -102,37 +102,41 @@ public class MainController {
             event.consume();
         });
         rootPane.setOnDragDropped(event -> {
-            if (event.getDragboard().hasFiles()) {
-                addFiles(event.getDragboard().getFiles());
-            } else if (event.getDragboard().hasUrl()) {
-                FileChooser fc = new FileChooser();
-                fc.setTitle("Save Image As");
-                fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
-                fc.setInitialFileName(event.getDragboard().getUrl().substring(event.getDragboard().getUrl().lastIndexOf("/") + 1));
-                fc.setInitialDirectory(lastSaveFolder);
-                File target = fc.showSaveDialog(stage);
+            List<File> files = event.getDragboard().getFiles();
+            String url = event.getDragboard().getUrl();
+            Platform.runLater(() -> {
+                if (files != null && !files.isEmpty()) {
+                    addFiles(files);
+                } else if (url != null && !url.isEmpty()) {
+                    FileChooser fc = new FileChooser();
+                    fc.setTitle("Save Image As");
+                    fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
+                    fc.setInitialFileName(url.substring(url.lastIndexOf("/") + 1));
+                    fc.setInitialDirectory(lastSaveFolder);
+                    File target = fc.showSaveDialog(stage);
 
-                if (target != null) {
-                    try {
-                        HttpURLConnection conn = (HttpURLConnection) new URL(event.getDragboard().getUrl()).openConnection();
-                        conn.addRequestProperty("User-Agent", "Mozilla/4.0");
-                        ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-                        FileOutputStream fos = new FileOutputStream(target);
-                        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-
-                        lastSaveFolder = target.getParentFile();
-
+                    if (target != null) {
                         try {
-                            db.addImage(target.getAbsolutePath());
-                        } catch (SQLException e) {
+                            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                            conn.addRequestProperty("User-Agent", "Mozilla/4.0");
+                            ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+                            FileOutputStream fos = new FileOutputStream(target);
+                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+                            lastSaveFolder = target.getParentFile();
+
+                            try {
+                                db.addImage(target.getAbsolutePath());
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        } catch (IOException e) {
                             e.printStackTrace();
+                            Main.showErrorMessage("Error!", "Error saving file from URL", e.getMessage());
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Main.showErrorMessage("Error!", "Error saving file from URL", e.getMessage());
                     }
                 }
-            }
+            });
             event.consume();
         });
 
