@@ -434,10 +434,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
                     added++;
                 } else {
                     GridImageView view = imageViews.get(i);
-                    view.unloadThumbnail();
+                    if (view.getInfo() != image) {
+                        view.unloadThumbnail();
 
-                    view.setInfo(image);
-                    updated++;
+                        view.setInfo(image);
+                        updated++;
+                    }
                 }
 
                 i++;

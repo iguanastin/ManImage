@@ -71,6 +71,16 @@ public class ImageInfo {
         return thumbnail.get();
     }
 
+    public boolean cancelLoadingThumbnail() {
+        if (thumbnail == null || thumbnail.get() == null || thumbnail.get().getProgress() == 1) {
+            return false;
+        }
+
+        thumbnail.get().cancel();
+
+        return true;
+    }
+
     public Image getImage() {
         if (image == null || image.get() == null) {
             Image img = new Image("file:" + path.getAbsolutePath(), true);
