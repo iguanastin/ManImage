@@ -71,20 +71,20 @@ public class ImageInfo {
         return thumbnail.get();
     }
 
-    public boolean cancelLoadingThumbnail() {
-        if (thumbnail == null || thumbnail.get() == null || thumbnail.get().getProgress() == 1) {
-            return false;
-        }
+    public void cancelLoadingThumbnail() {
+        if (thumbnail == null || thumbnail.get() == null || thumbnail.get().getProgress() == 1) return;
 
         thumbnail.get().cancel();
-
-        return true;
     }
 
     public Image getImage() {
         if (image == null || image.get() == null) {
             Image img = new Image("file:" + path.getAbsolutePath(), true);
             image = new SoftReference<>(img);
+            img.exceptionProperty().addListener((observable, oldValue, newValue) -> {
+                newValue.printStackTrace();
+                //TODO: Improve this error reporting
+            });
             return img;
         }
 

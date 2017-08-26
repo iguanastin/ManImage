@@ -471,12 +471,18 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             event.consume();
         });
         view.setOnDragDetected(event -> {
-            Dragboard db = view.startDragAndDrop(TransferMode.ANY);
-            ArrayList<File> files = new ArrayList<>();
-            selected.forEach(item -> files.add(item.getInfo().getPath()));
-            MainController.clipboard.putFiles(files);
-            db.setContent(MainController.clipboard);
-            event.consume();
+            if (event.isPrimaryButtonDown()) {
+                if (!view.isSelected()) {
+                    select(view, event.isShiftDown(), event.isControlDown());
+                    if (previewListener != null) previewListener.preview(view.getInfo());
+                }
+                Dragboard db = view.startDragAndDrop(TransferMode.ANY);
+                ArrayList<File> files = new ArrayList<>();
+                selected.forEach(item -> files.add(item.getInfo().getPath()));
+                MainController.clipboard.putFiles(files);
+                db.setContent(MainController.clipboard);
+                event.consume();
+            }
         });
         view.setOnDragDone(javafx.event.Event::consume);
         imageViews.add(view);
