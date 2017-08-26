@@ -242,11 +242,9 @@ public class MainController {
         grid.setSearchTags(searchTagsTextfield.getText().split(" "));
         //Set filepath
         grid.setSearchFilePath(searchPathTextfield.getText());
+        grid.requestFocus();
         //Set page
         setPage(0);
-
-        grid.updateSearchContents();
-        grid.requestFocus();
         showImage(grid.selectFirst(false, false));
     }
 
@@ -396,10 +394,6 @@ public class MainController {
         }
 
         return results;
-    }
-
-    public Properties getProperties() {
-        return properties;
     }
 
     //------------------- Private classes ------------------------------------------------------------------------------
