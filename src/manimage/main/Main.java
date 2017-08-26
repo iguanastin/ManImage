@@ -31,8 +31,6 @@ public class Main extends Application {
     static final FileFilter IMG_VID_FILTER = file -> IMAGE_FILTER.accept(file) || VIDEO_FILTER.accept(file);
     static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image and Video Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.mp4", "*.avi", "*.webm", "*.flv", "*.wmv", "*.3gp", "*.mov", "*.mpg");
 
-    private static boolean isIDE = false;
-
     public static boolean supportVideo = true;
 
     //TODO: Redesign this GUI entirely
@@ -72,6 +70,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage mainStage) throws Exception {
+
         //--------------- Discover VLC natives -------------------------------------------------------------------------
 
         if (new NativeDiscovery().discover()) {
@@ -82,9 +81,7 @@ public class Main extends Application {
 
         //------------ Build main stage --------------------------------------------------------------------------------
 
-        FXMLLoader loader;
-        if (isIDE) loader = new FXMLLoader(getClass().getResource("../fxml/application.fxml"));
-        else loader = new FXMLLoader(new URL("file:" + new File("fxml/application.fxml").getAbsolutePath()));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/application.fxml"));
         Parent mainRoot = loader.load();
         mainStage.setTitle("ManImage");
         mainStage.setScene(new Scene(mainRoot, 1600, 900));
@@ -92,13 +89,6 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("ide")) {
-                isIDE = true;
-                break;
-            }
-        }
-
         launch(args);
 //        System.exit(0);
     }
