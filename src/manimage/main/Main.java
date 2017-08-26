@@ -89,14 +89,6 @@ public class Main extends Application {
         mainStage.setTitle("ManImage");
         mainStage.setScene(new Scene(mainRoot, 1600, 900));
         mainStage.show();
-
-        MainController mainController = loader.getController();
-        mainController.setStage(mainStage);
-
-        mainStage.setOnCloseRequest(event -> {
-            Platform.exit();
-            System.exit(0);
-        });
     }
 
     public static void main(String[] args) {

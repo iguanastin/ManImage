@@ -27,10 +27,7 @@ import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -63,12 +60,12 @@ public class MainController {
     public SplitPane rootPane;
 
     private DBInterface db;
-    private Stage stage;
 
     private CanvasPlayerComponent mediaPlayerComponent;
 
     private File lastFolder;
     private File lastSaveFolder;
+
     private String[] orderByMap;
 
     private final String dbPath;
@@ -76,6 +73,9 @@ public class MainController {
     private final String dbPass = "";
 
     static final ClipboardContent clipboard = new ClipboardContent();
+
+    private Properties properties;
+    private String propertiesFilePath = "manimage.properties";
 
 
     public MainController() {
@@ -95,7 +95,7 @@ public class MainController {
         } catch (SQLException ex) {
             ex.printStackTrace();
             Main.showErrorMessage("Error!", "Database is already in use and cannot be opened", ex.getLocalizedMessage());
-            Platform.exit();
+            closeWindow();
         }
 
         grid.setPreviewListener(this::preview);
@@ -132,7 +132,7 @@ public class MainController {
                     e.printStackTrace();
                 }
                 fc.setInitialDirectory(lastSaveFolder);
-                File target = fc.showSaveDialog(stage);
+                File target = fc.showSaveDialog(rootPane.getScene().getWindow());
 
                 if (target != null) {
                     new Thread(() -> {
@@ -162,8 +162,15 @@ public class MainController {
             event.consume();
         });
 
-        Platform.runLater(() -> {
+        initProperties();
 
+        Platform.runLater(() -> {
+            rootPane.getScene().getWindow().setOnCloseRequest(event -> {
+                closeWindow();
+            });
+        });
+
+        Platform.runLater(() -> {
             grid.updateSearchContents();
             if (grid.getCount() > 0) {
                 grid.select(grid.getImageViews().get(0), false, false);
@@ -172,9 +179,31 @@ public class MainController {
         });
     }
 
+    private void initProperties() {
+        properties = new Properties();
+        File propsFile = new File(propertiesFilePath);
+        if (propsFile.exists()) {
+            try {
+                properties.load(new FileReader(propsFile));
+
+                if (properties.containsKey("lastLoadFolder")) lastFolder = new File(properties.getProperty("lastLoadFolder"));
+                if (properties.containsKey("lastSaveFolder")) lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
+                Platform.runLater(() -> {
+                    if (properties.containsKey("x")) rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
+                    if (properties.containsKey("y")) rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
+                    if (properties.containsKey("width")) rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
+                    if (properties.containsKey("height")) rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
+                    if (properties.containsKey("maximized")) ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     //------------------ Operators -------------------------------------------------------------------------------------
 
-    void preview(ImageInfo info) {
+    private void preview(ImageInfo info) {
         if (Main.supportVideo && mediaPlayerComponent != null) {
             mediaPlayerComponent.getMediaPlayer().stop();
             mediaPlayerComponent.getMediaPlayer().release();
@@ -219,6 +248,28 @@ public class MainController {
         grid.updateSearchContents();
         grid.requestFocus();
         showImage(grid.selectFirst(false, false));
+    }
+
+    private void saveProperties() {
+        try {
+            if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
+            if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
+            properties.setProperty("maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized() + "");
+            properties.setProperty("x", "" + rootPane.getScene().getWindow().getX());
+            properties.setProperty("y", "" + rootPane.getScene().getWindow().getY());
+            properties.setProperty("width", "" + rootPane.getScene().getWindow().getWidth());
+            properties.setProperty("height", "" + rootPane.getScene().getWindow().getHeight());
+            properties.store(new FileOutputStream(propertiesFilePath), null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeWindow() {
+        saveProperties();
+
+        Platform.exit();
+        System.exit(0);
     }
 
     private static void ensureVisible(ScrollPane pane, Node node) {
@@ -347,10 +398,8 @@ public class MainController {
         return results;
     }
 
-    //-------------------------- Setters -------------------------------------------------------------------------------
-
-    void setStage(Stage stage) {
-        this.stage = stage;
+    public Properties getProperties() {
+        return properties;
     }
 
     //------------------- Private classes ------------------------------------------------------------------------------
@@ -401,7 +450,7 @@ public class MainController {
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
         fc.setInitialDirectory(lastFolder);
-        List<File> files = fc.showOpenMultipleDialog(stage);
+        List<File> files = fc.showOpenMultipleDialog(rootPane.getScene().getWindow());
 
         addFiles(files);
     }
@@ -410,7 +459,7 @@ public class MainController {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder");
         dc.setInitialDirectory(lastFolder);
-        File folder = dc.showDialog(stage);
+        File folder = dc.showDialog(rootPane.getScene().getWindow());
 
         addFolder(folder);
     }
@@ -419,14 +468,13 @@ public class MainController {
         final DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder and all subfolders");
         dc.setInitialDirectory(lastFolder);
-        final File folder = dc.showDialog(stage);
+        final File folder = dc.showDialog(rootPane.getScene().getWindow());
 
         addRecurseFolder(folder);
     }
 
     public void exitClicked(ActionEvent event) {
-        Platform.exit();
-        System.exit(0);
+        closeWindow();
     }
 
     public void aboutMenuActivated(ActionEvent event) {
@@ -553,8 +601,7 @@ public class MainController {
 
     public void rootPaneKeyPressed(KeyEvent event) {
         if (event.isControlDown() && event.getCode() == KeyCode.Q) {
-            Platform.exit();
-            System.exit(0);
+            closeWindow();
         } else if (event.isControlDown() && event.getCode() == KeyCode.R) {
             searchTagsTextfield.requestFocus();
         }
