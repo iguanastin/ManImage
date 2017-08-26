@@ -30,8 +30,10 @@ import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -118,18 +120,22 @@ public class MainController {
         rootPane.setOnDragDropped(event -> {
             List<File> files = event.getDragboard().getFiles();
             String url = event.getDragboard().getUrl();
-            Platform.runLater(() -> {
-                if (files != null && !files.isEmpty()) {
-                    addFiles(files);
-                } else if (url != null && !url.isEmpty()) {
-                    FileChooser fc = new FileChooser();
-                    fc.setTitle("Save Image As");
-                    fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
-                    fc.setInitialFileName(url.substring(url.lastIndexOf("/") + 1));
-                    fc.setInitialDirectory(lastSaveFolder);
-                    File target = fc.showSaveDialog(stage);
+            if (files != null && !files.isEmpty()) {
+                addFiles(files);
+            } else if (url != null && !url.isEmpty()) {
+                FileChooser fc = new FileChooser();
+                fc.setTitle("Save Image As");
+                fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
+                try {
+                    fc.setInitialFileName(URLDecoder.decode(url, "UTF-8").substring(url.lastIndexOf("/") + 1));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                fc.setInitialDirectory(lastSaveFolder);
+                File target = fc.showSaveDialog(stage);
 
-                    if (target != null) {
+                if (target != null) {
+                    new Thread(() -> {
                         try {
                             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                             conn.addRequestProperty("User-Agent", "Mozilla/4.0");
@@ -139,18 +145,20 @@ public class MainController {
 
                             lastSaveFolder = target.getParentFile();
 
-                            try {
-                                db.addImage(target.getAbsolutePath());
-                            } catch (SQLException e) {
-                                e.printStackTrace();
-                            }
+                            Platform.runLater(() -> {
+                                try {
+                                    db.addImage(target.getAbsolutePath());
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                            });
                         } catch (IOException e) {
                             e.printStackTrace();
                             Main.showErrorMessage("Error!", "Error saving file from URL", e.getMessage());
                         }
-                    }
+                    }).start();
                 }
-            });
+            }
             event.consume();
         });
 
