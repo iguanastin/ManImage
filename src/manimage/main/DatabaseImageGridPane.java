@@ -456,7 +456,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
 //        System.out.println("GridUpdateView:\t\tAdded " + added + ", Removed " + removed + ", Updated " + updated);
 
+        if (previewListener != null) {
+            if (getLastSelected() == null) previewListener.preview(null);
+            else previewListener.preview(getLastSelected().getInfo());
+        }
         updateVisibleThumbnails();
+
     }
 
     private GridImageView createNewGridView(int index, ImageInfo image) {
