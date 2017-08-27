@@ -202,7 +202,7 @@ public class DBInterface {
     }
 
     public static String imgTagsArrayToString(String[] tags) {
-        return " " + String.join(" ", tags) + " ";
+        return (" " + String.join(" ", tags) + " ").toLowerCase();
     }
 
     public static String[] imgTagsStringToArray(String img_tags) {
