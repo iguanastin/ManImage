@@ -1,6 +1,7 @@
 package manimage.common;
 
 
+import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 
@@ -13,23 +14,19 @@ public final class ImageHistogram {
     private final double[] green = new double[256];
     private final double[] blue = new double[256];
 
-
-    public ImageHistogram(final Image image) throws HistogramReadException {
-        if (image == null) throw new HistogramReadException("Cannot parse null image");
-
-//        if (image.isBackgroundLoading() && image.getProgress() != 1) {
-//            final Thread thisThread = Thread.currentThread();
-//            image.progressProperty().addListener((observable, oldValue, newValue) -> {
-//                if (newValue.equals(1)) thisThread.notify(); //Notify this thread as soon as the image finishes loading
-//            });
-//
-//            try {
-//                synchronized (thisThread) {
-//                    thisThread.wait();
-//                }
-//            } catch (InterruptedException e) {
-//            }
-//        }
+    public ImageHistogram(@NotNull final Image image) throws HistogramReadException {
+        if (image.isBackgroundLoading() && image.getProgress() != 1) {
+            Object lock = new Object();
+            synchronized (lock) {
+                image.progressProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue.equals(1)) lock.notifyAll();
+                });
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                }
+            }
+        }
 
         final long pixelCount = (long) (image.getWidth() * image.getHeight());
 

@@ -54,7 +54,7 @@ public class ImageInfo {
         if (histogram != null) return histogram;
 
         try {
-            histogram = new ImageHistogram(getImage());
+            histogram = new ImageHistogram(getImage(false));
         } catch (HistogramReadException e) {
             e.printStackTrace();
         }
@@ -77,9 +77,9 @@ public class ImageInfo {
         thumbnail.get().cancel();
     }
 
-    public Image getImage() {
+    public Image getImage(boolean backgroundLoading) {
         if (image == null || image.get() == null) {
-            Image img = new Image("file:" + path.getAbsolutePath(), true);
+            Image img = new Image("file:" + path.getAbsolutePath(), backgroundLoading);
             image = new SoftReference<>(img);
             img.exceptionProperty().addListener((observable, oldValue, newValue) -> {
                 newValue.printStackTrace();

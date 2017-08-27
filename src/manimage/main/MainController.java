@@ -34,10 +34,13 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 public class MainController {
 
@@ -177,6 +180,7 @@ public class MainController {
                 preview(grid.getLastSelected().getInfo());
             }
         });
+
     }
 
     private void initProperties() {
@@ -213,7 +217,7 @@ public class MainController {
 
         if (info != null) {
             if (Main.IMAGE_FILTER.accept(info.getPath())) {
-                previewDynamicImageView.setImage(info.getImage());
+                previewDynamicImageView.setImage(info.getImage(true));
                 previewTagsLabel.setText(String.join(", ", info.getTags()));
             } else if (Main.supportVideo && Main.VIDEO_FILTER.accept(info.getPath())) {
                 Rectangle2D screen = Screen.getPrimary().getVisualBounds();

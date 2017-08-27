@@ -31,7 +31,7 @@ public class Main extends Application {
     static final FileFilter IMG_VID_FILTER = file -> IMAGE_FILTER.accept(file) || VIDEO_FILTER.accept(file);
     static final FileChooser.ExtensionFilter EXTENSION_FILTER = new FileChooser.ExtensionFilter("Image and Video Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.mp4", "*.avi", "*.webm", "*.flv", "*.wmv", "*.3gp", "*.mov", "*.mpg");
 
-    public static boolean supportVideo = true;
+    static boolean supportVideo = true;
 
     //TODO: Redesign this GUI entirely
     /*Things to take into account:
