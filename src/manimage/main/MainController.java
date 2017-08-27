@@ -249,7 +249,6 @@ public class MainController {
         grid.requestFocus();
         //Set page
         setPage(0);
-        showImage(grid.selectFirst(false, false));
     }
 
     private void saveProperties() {
