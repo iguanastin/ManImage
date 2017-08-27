@@ -69,6 +69,7 @@ public class DBInterface {
             tags = tags.clone();
             final String[] sqlTagArr = tags.clone();
             for (int i = 0; i < sqlTagArr.length; i++) {
+                tags[i] = tags[i].toLowerCase();
                 if (sqlTagArr[i].charAt(0) == '-') {
                     sqlTagArr[i] = "img_tags NOT LIKE ?";
                     tags[i] = tags[i].substring(1);
