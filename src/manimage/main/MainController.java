@@ -21,7 +21,10 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
+import uk.co.caprica.vlcj.binding.internal.libvlc_media_t;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.MediaPlayer;
+import uk.co.caprica.vlcj.player.MediaPlayerEventListener;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
@@ -408,7 +411,7 @@ public class MainController {
 
 
         CanvasPlayerComponent(WritableImage img) {
-            super(new CanvasBufferFormatCallback());
+            super((i, i1) -> new RV32BufferFormat((int) Screen.getPrimary().getVisualBounds().getWidth(), (int) Screen.getPrimary().getVisualBounds().getHeight()));
             this.img = img;
         }
 
@@ -429,14 +432,6 @@ public class MainController {
                     mediaPlayer.unlock();
                 }
             });
-        }
-    }
-
-    private class CanvasBufferFormatCallback implements BufferFormatCallback {
-        @Override
-        public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
-            Rectangle2D screen = Screen.getPrimary().getVisualBounds();
-            return new RV32BufferFormat((int) screen.getWidth(), (int) screen.getHeight());
         }
     }
 
@@ -487,19 +482,7 @@ public class MainController {
     }
 
     public void gridScrollPaneKeyPressed(KeyEvent event) {
-        if (event.getCode() == KeyCode.LEFT) {
-            showImage(grid.selectLeft(1, event.isShiftDown(), event.isControlDown()));
-            event.consume();
-        } else if (event.getCode() == KeyCode.RIGHT) {
-            showImage(grid.selectRight(1, event.isShiftDown(), event.isControlDown()));
-            event.consume();
-        } else if (event.getCode() == KeyCode.DOWN) {
-            showImage(grid.selectDown(1, event.isShiftDown(), event.isControlDown()));
-            event.consume();
-        } else if (event.getCode() == KeyCode.UP) {
-            showImage(grid.selectUp(1, event.isShiftDown(), event.isControlDown()));
-            event.consume();
-        } else if (event.getCode() == KeyCode.DELETE) {
+        if (event.getCode() == KeyCode.DELETE) {
             if (event.isControlDown()) {
                 if (Main.getUserConfirmation("Forget Files", "Remove these files from the database permanently?", "This action cannot be undone!")) {
                     grid.removeSelected();
@@ -542,6 +525,18 @@ public class MainController {
             for (GridImageView view : grid.getSelected()) {
                 System.out.println(view.getInfo().getHistogram().getSimilarity(grid.getLastSelected().getInfo().getHistogram()));
             }
+            event.consume();
+        } else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.A) {
+            showImage(grid.selectLeft(1, event.isShiftDown(), event.isControlDown()));
+            event.consume();
+        } else if (event.getCode() == KeyCode.RIGHT || event.getCode() == KeyCode.D) {
+            showImage(grid.selectRight(1, event.isShiftDown(), event.isControlDown()));
+            event.consume();
+        } else if (event.getCode() == KeyCode.DOWN || event.getCode() == KeyCode.S) {
+            showImage(grid.selectDown(1, event.isShiftDown(), event.isControlDown()));
+            event.consume();
+        } else if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.W) {
+            showImage(grid.selectUp(1, event.isShiftDown(), event.isControlDown()));
             event.consume();
         }
     }

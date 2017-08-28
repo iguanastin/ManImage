@@ -53,12 +53,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         MenuItem[] items = new MenuItem[7];
 
         items[0] = new MenuItem("View Info");
+        //TODO: Implement info viewing
 
-        items[1] = new MenuItem("Add Tag");
+        items[1] = new MenuItem("Edit Tags");
         items[1].setOnAction(event -> {
             openTagEditorDialog();
         });
-        //TODO: Implement info viewing
 
         items[2] = new MenuItem("View in Folder");
         items[2].setOnAction(event -> {
