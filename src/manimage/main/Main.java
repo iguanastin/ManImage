@@ -3,10 +3,13 @@ package manimage.main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import manimage.common.HistogramReadException;
 import manimage.common.ImageHistogram;
@@ -33,24 +36,6 @@ public class Main extends Application {
 
     static boolean supportVideo = true;
 
-    //TODO: Redesign this GUI entirely
-    /*Things to take into account:
-        Batched editing
-        Quick previews
-        Complex searches
-        Limited space
-        Modular pieces
-            Duplicate checking
-            Comic reading
-            Mass editor
-            Slideshow
-        Other forms of media?
-            Video
-            Text
-        Inline editors?
-        CSS Styling?
-        Pages
-    */
 
     static boolean getUserConfirmation(String title, String header, String content) {
         Alert d = new Alert(Alert.AlertType.CONFIRMATION);
@@ -71,6 +56,8 @@ public class Main extends Application {
     @Override
     public void start(Stage mainStage) throws Exception {
 
+        Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+
         //--------------- Discover VLC natives -------------------------------------------------------------------------
 
         if (new NativeDiscovery().discover()) {
@@ -84,8 +71,12 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/application.fxml"));
         Parent mainRoot = loader.load();
         mainStage.setTitle("ManImage");
-        mainStage.setScene(new Scene(mainRoot, 1600, 900));
+        mainStage.setScene(new Scene(mainRoot, screen.getWidth() * 0.8, screen.getHeight() * 0.8));
         mainStage.show();
+
+//        Parent mainRoot = FXMLLoader.load(getClass().getResource("/manimage/fxml/duplicateresolver.fxml"));
+//        mainStage.setScene(new Scene(mainRoot, screen.getWidth() * 0.8, screen.getHeight() * 0.8));
+//        mainStage.show();
     }
 
     public static void main(String[] args) {
