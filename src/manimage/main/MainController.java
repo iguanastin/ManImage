@@ -14,6 +14,7 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -21,12 +22,8 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
-import uk.co.caprica.vlcj.binding.internal.libvlc_media_t;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
-import uk.co.caprica.vlcj.player.MediaPlayer;
-import uk.co.caprica.vlcj.player.MediaPlayerEventListener;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
-import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
@@ -37,13 +34,10 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 public class MainController {
 
@@ -63,7 +57,8 @@ public class MainController {
     public Button prevPageButton;
     public Button nextPageButton;
     public TextField pageNumTextfield;
-    public SplitPane rootPane;
+    public BorderPane rootPane;
+    public SplitPane primarySplitPane;
 
     private DBInterface db;
 
@@ -174,14 +169,12 @@ public class MainController {
             rootPane.getScene().getWindow().setOnCloseRequest(event -> {
                 closeWindow();
             });
-        });
-
-        Platform.runLater(() -> {
             grid.updateSearchContents();
             if (grid.getCount() > 0) {
                 grid.select(grid.getImageViews().get(0), false, false);
                 preview(grid.getLastSelected().getInfo());
             }
+            grid.requestFocus();
         });
 
     }
@@ -201,6 +194,7 @@ public class MainController {
                     if (properties.containsKey("width")) rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
                     if (properties.containsKey("height")) rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
                     if (properties.containsKey("maximized")) ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
+                    if (properties.containsKey("splitPercent")) primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
                 });
             } catch (IOException e) {
                 e.printStackTrace();
@@ -263,6 +257,7 @@ public class MainController {
             properties.setProperty("y", "" + rootPane.getScene().getWindow().getY());
             properties.setProperty("width", "" + rootPane.getScene().getWindow().getWidth());
             properties.setProperty("height", "" + rootPane.getScene().getWindow().getHeight());
+            properties.setProperty("splitPercent", "" + primarySplitPane.getDividerPositions()[0]);
             properties.store(new FileOutputStream(propertiesFilePath), null);
         } catch (IOException e) {
             e.printStackTrace();

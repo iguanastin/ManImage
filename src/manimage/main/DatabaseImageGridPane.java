@@ -170,7 +170,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         return pageLength;
     }
 
-    public ArrayList<GridImageView> getSelected() {
+    ArrayList<GridImageView> getSelected() {
         return selected;
     }
 
@@ -406,7 +406,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     void updateVisibleThumbnails() {
         if (getScene() == null) return;
         ScrollPane scrollPane = (ScrollPane) getScene().lookup("#gridScrollPane");
-        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getLayoutBounds());
+        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
         int updates = 0;
 
         layout();
