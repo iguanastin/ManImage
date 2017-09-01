@@ -4,21 +4,23 @@ import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import manimage.common.*;
+import manimage.common.DBInterface;
+import manimage.common.ImageDatabaseUpdateListener;
+import manimage.common.ImageInfo;
+import manimage.common.OrderBy;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 
@@ -325,8 +327,8 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     GridImageView selectLast(boolean shiftDown, boolean controlDown) {
         if (imageViews.isEmpty()) return null;
 
-        select(imageViews.get(imageViews.size()-1), shiftDown, controlDown);
-        return imageViews.get(imageViews.size()-1);
+        select(imageViews.get(imageViews.size() - 1), shiftDown, controlDown);
+        return imageViews.get(imageViews.size() - 1);
     }
 
     void selectAll() {
@@ -423,32 +425,76 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
     void updateSearchContents() {
         if (db == null || !db.isConnected()) return;
 
+        ArrayList<ImageInfo> images;
         try {
-            ArrayList<ImageInfo> images = db.getImages(pageLength, pageLength*pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchFilePath);
-
-            int i = 0;
-            for (ImageInfo image : images) {
-                if (i >= imageViews.size()) {
-                    createNewGridView(i, image);
-                } else {
-                    GridImageView view = imageViews.get(i);
-                    if (view.getInfo() != image) {
-                        view.unloadThumbnail();
-
-                        view.setInfo(image);
-                    }
-                }
-
-                i++;
-            }
-
-            for (int k = imageViews.size() - i; k > 0; k--) {
-                GridImageView view = imageViews.remove(imageViews.size() - 1);
-                getChildren().remove(view);
-            }
+            images = db.getImages(pageLength, pageLength * pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchFilePath);
         } catch (SQLException ex) {
             ex.printStackTrace();
+            return;
         }
+        ArrayList<GridImageView> pool = (ArrayList<GridImageView>) imageViews.clone();
+        ArrayList<GridImageView> needed = new ArrayList<>();
+        imageViews.clear();
+        getChildren().clear();
+
+        ListIterator<GridImageView> iter = pool.listIterator();
+        while (iter.hasNext()) {
+            GridImageView item = iter.next();
+            if (images.contains(item.getInfo())) {
+                needed.add(item);
+                iter.remove();
+            }
+        }
+
+        int i = 0;
+        for (ImageInfo img : images) {
+            GridImageView grid = null;
+            for (GridImageView view : needed) {
+                if (view.getInfo() == img) {
+                    needed.remove(view);
+                    grid = view;
+                    imageViews.add(grid);
+                    getChildren().add(grid);
+                    break;
+                }
+            }
+
+            if (grid == null) {
+                if (pool.isEmpty()) {
+                    createNewGridView(i, img);
+                } else {
+                    grid = pool.get(0);
+                    grid.unloadThumbnail();
+                    grid.setInfo(img);
+                    pool.remove(0);
+                    imageViews.add(grid);
+                    getChildren().add(grid);
+                }
+            }
+
+            i++;
+        }
+
+//        int i = 0;
+//        for (ImageInfo image : images) {
+//            if (i >= imageViews.size()) {
+//                createNewGridView(i, image);
+//            } else {
+//                GridImageView view = imageViews.get(i);
+//                if (view.getInfo() != image) {
+//                    view.unloadThumbnail();
+//
+//                    view.setInfo(image);
+//                }
+//            }
+//
+//            i++;
+//        }
+//
+//        for (int k = imageViews.size() - i; k > 0; k--) {
+//            GridImageView view = imageViews.remove(imageViews.size() - 1);
+//            getChildren().remove(view);
+//        }
 
         if (previewListener != null) {
             if (getLastSelected() == null) previewListener.preview(null);
