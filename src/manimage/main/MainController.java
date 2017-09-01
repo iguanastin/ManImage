@@ -6,9 +6,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
@@ -22,6 +25,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
+import manimage.common.SimilarPair;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
@@ -186,15 +190,23 @@ public class MainController {
             try {
                 properties.load(new FileReader(propsFile));
 
-                if (properties.containsKey("lastLoadFolder")) lastFolder = new File(properties.getProperty("lastLoadFolder"));
-                if (properties.containsKey("lastSaveFolder")) lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
+                if (properties.containsKey("lastLoadFolder"))
+                    lastFolder = new File(properties.getProperty("lastLoadFolder"));
+                if (properties.containsKey("lastSaveFolder"))
+                    lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
                 Platform.runLater(() -> {
-                    if (properties.containsKey("x")) rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
-                    if (properties.containsKey("y")) rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
-                    if (properties.containsKey("width")) rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
-                    if (properties.containsKey("height")) rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
-                    if (properties.containsKey("maximized")) ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
-                    if (properties.containsKey("splitPercent")) primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
+                    if (properties.containsKey("x"))
+                        rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
+                    if (properties.containsKey("y"))
+                        rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
+                    if (properties.containsKey("width"))
+                        rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
+                    if (properties.containsKey("height"))
+                        rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
+                    if (properties.containsKey("maximized"))
+                        ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
+                    if (properties.containsKey("splitPercent"))
+                        primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
                 });
             } catch (IOException e) {
                 e.printStackTrace();
@@ -359,6 +371,8 @@ public class MainController {
             preview(last.getInfo());
             ensureVisible(gridScrollPane, last);
             grid.updateVisibleThumbnails();
+        } else {
+            preview(null);
         }
     }
 
@@ -517,8 +531,28 @@ public class MainController {
             grid.openTagEditorDialog();
             event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.H) {
-            for (GridImageView view : grid.getSelected()) {
-                System.out.println(view.getInfo().getHistogram().getSimilarity(grid.getLastSelected().getInfo().getHistogram()));
+            List<SimilarPair> pairs = new ArrayList<>();
+            for (int i = 0; i < grid.getSelected().size(); i++) {
+                for (int j = i + 1; j < grid.getSelected().size(); j++) {
+                    final ImageInfo img1 = grid.getSelected().get(i).getInfo();
+                    final ImageInfo img2 = grid.getSelected().get(j).getInfo();
+                    if (!img1.getPath().getName().toLowerCase().endsWith(".gif") && !img2.getPath().getName().toLowerCase().endsWith(".gif")) {
+                        final double similarity = img1.getHistogram().getSimilarity(img2.getHistogram());
+                        final double confidence = 0.9;
+                        if (similarity >= confidence) {
+                            pairs.add(new SimilarPair(img1, img2, similarity));
+                        }
+                    }
+                }
+            }
+            try {
+                Stage stage = new Stage();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/duplicateresolver.fxml"));
+                stage.setScene(new Scene(loader.load(), Screen.getPrimary().getVisualBounds().getWidth() * 0.8, Screen.getPrimary().getVisualBounds().getHeight() * 0.8));
+                ((DuplicateResolverController) loader.getController()).setDataset(db, pairs);
+                stage.showAndWait();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             event.consume();
         } else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.A) {

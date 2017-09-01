@@ -422,7 +422,6 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
 
     void updateSearchContents() {
         if (db == null || !db.isConnected()) return;
-        int added = 0, removed = 0, updated = 0;
 
         try {
             ArrayList<ImageInfo> images = db.getImages(pageLength, pageLength*pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchFilePath);
@@ -431,14 +430,12 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             for (ImageInfo image : images) {
                 if (i >= imageViews.size()) {
                     createNewGridView(i, image);
-                    added++;
                 } else {
                     GridImageView view = imageViews.get(i);
                     if (view.getInfo() != image) {
                         view.unloadThumbnail();
 
                         view.setInfo(image);
-                        updated++;
                     }
                 }
 
@@ -448,13 +445,10 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             for (int k = imageViews.size() - i; k > 0; k--) {
                 GridImageView view = imageViews.remove(imageViews.size() - 1);
                 getChildren().remove(view);
-                removed++;
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-
-//        System.out.println("GridUpdateView:\t\tAdded " + added + ", Removed " + removed + ", Updated " + updated);
 
         if (previewListener != null) {
             if (getLastSelected() == null) previewListener.preview(null);

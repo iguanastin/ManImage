@@ -9,31 +9,31 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.text.Font?>
 
-<SplitPane fx:id="root" dividerPositions="0.5" orientation="VERTICAL" prefHeight="567.0" prefWidth="838.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.DuplicateResolverController">
-    <HBox fx:id="imageHBox" alignment="CENTER">
+<SplitPane fx:id="root" dividerPositions="0.5" onKeyPressed="#onRootKeyPressed" orientation="VERTICAL" prefHeight="567.0" prefWidth="838.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.DuplicateResolverController">
+    <HBox fx:id="imageHBox" alignment="TOP_CENTER" focusTraversable="true">
         <ImageView fx:id="leftImageView" fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
         <ImageView fx:id="rightImageView" fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
     </HBox>
-   <BorderPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="70.0">
+   <BorderPane focusTraversable="true" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="70.0">
       <bottom>
           <BorderPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="35.0" BorderPane.alignment="CENTER">
               <right>
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" BorderPane.alignment="CENTER">
                       <Label fx:id="rightInfoLabel" text="Filesize (WidthXHeight)" HBox.hgrow="SOMETIMES" />
-                      <Button mnemonicParsing="false" onAction="#onDeleteRightAction" text="Delete" />
+                      <Button focusTraversable="false" mnemonicParsing="false" onAction="#onDeleteRightAction" text="Delete" />
                   </HBox>
               </right>
               <left>
                   <HBox alignment="CENTER_LEFT" spacing="5.0" BorderPane.alignment="CENTER">
-                      <Button mnemonicParsing="false" onAction="#onDeleteLeftAction" text="Delete" />
+                      <Button focusTraversable="false" mnemonicParsing="false" onAction="#onDeleteLeftAction" text="Delete" />
                       <Label fx:id="leftInfoLabel" text="Filesize (WidthXHeight)" HBox.hgrow="SOMETIMES" />
                   </HBox>
               </left>
               <center>
                   <HBox alignment="CENTER" spacing="5.0" BorderPane.alignment="CENTER">
-                      <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#onPreviousAction" text="Prev" />
+                      <Button focusTraversable="false" minWidth="-Infinity" mnemonicParsing="false" onAction="#onPreviousAction" text="Prev" />
                       <Label fx:id="countLabel" minWidth="-Infinity" text="0/0" HBox.hgrow="ALWAYS" />
-                      <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#onNextAction" text="Next" />
+                      <Button focusTraversable="false" minWidth="-Infinity" mnemonicParsing="false" onAction="#onNextAction" text="Next" />
                   </HBox>
               </center>
               <padding>
