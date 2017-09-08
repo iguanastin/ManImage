@@ -114,12 +114,17 @@
                             <ChoiceBox fx:id="secondaryOrderByChoiceBox" layoutX="70.0" layoutY="15.0" prefWidth="124.0" />
                             <ToggleButton fx:id="secondaryOrderByDescendingToggle" mnemonicParsing="false" text="Desc" />
                         </HBox>
-                        <HBox alignment="CENTER_RIGHT" focusTraversable="true" spacing="5.0">
-                            <padding>
-                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                            </padding>
-                            <Button mnemonicParsing="false" onAction="#onSearchButtonAction" text="Search" />
-                        </HBox>
+                  <BorderPane>
+                     <right>
+                               <Button mnemonicParsing="false" onAction="#onSearchButtonAction" text="Search" BorderPane.alignment="CENTER" />
+                     </right>
+                     <left>
+                        <Button mnemonicParsing="false" fx:id="allInSearchButton" onAction="#allInSearchButtonOnAction" text="All In Search" BorderPane.alignment="CENTER" />
+                     </left>
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </BorderPane>
                     </VBox>
                 </top>
             </BorderPane>

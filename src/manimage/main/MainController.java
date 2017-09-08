@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -63,6 +64,7 @@ public class MainController {
     public TextField pageNumTextfield;
     public BorderPane rootPane;
     public SplitPane primarySplitPane;
+    public Button allInSearchButton;
 
     private DBInterface db;
 
@@ -82,10 +84,21 @@ public class MainController {
     private Properties properties;
     private String propertiesFilePath = "manimage.properties";
 
+    private ContextMenu allInSearchContextMenu;
+
 
     public MainController() {
         if (System.getProperty("os.name").contains("Windows")) dbPath = System.getProperty("user.home") + "\\manimage";
         else dbPath = System.getProperty("user.home") + "/manimage";
+
+        MenuItem[] items = new MenuItem[5];
+        items[0] = new MenuItem("Edit Tags");
+        items[1] = new MenuItem("Find Duplicates");
+        items[2] = new SeparatorMenuItem();
+        items[3] = new MenuItem("Forget Images");
+        items[4] = new MenuItem("Delete Files");
+
+        allInSearchContextMenu = new ContextMenu(items);
     }
 
     //---------------------- Initializers ------------------------------------------------------------------------------
@@ -623,7 +636,7 @@ public class MainController {
     public void rootPaneKeyPressed(KeyEvent event) {
         if (event.isControlDown() && event.getCode() == KeyCode.Q) {
             closeWindow();
-        } else if (event.isControlDown() && event.getCode() == KeyCode.R) {
+        } else if (event.isControlDown() && event.getCode() == KeyCode.F) {
             searchTagsTextfield.requestFocus();
         }
     }
@@ -634,7 +647,7 @@ public class MainController {
         a.setHeaderText("Hotkeys");
         a.setContentText("Ctrl+E\t\tEdit tags of the selected images\n" +
                 "Ctrl+Q\t\tQuit ManImage\n" +
-                "Ctrl+R\t\tFocus the tag searchbar\n" +
+                "Ctrl+F\t\tFocus the tag searchbar\n" +
                 "Ctrl+A\t\tSelect all/no images\n" +
                 "Ctrl+PgDwn\tGo to next page\n" +
                 "Ctrl+PgUp\tGo to previous page");
@@ -646,6 +659,11 @@ public class MainController {
             grid.requestFocus();
             event.consume();
         }
+    }
+
+    public void allInSearchButtonOnAction(ActionEvent event) {
+        Point2D p = allInSearchButton.localToScreen(allInSearchButton.getLayoutX(), allInSearchButton.getLayoutY());
+        allInSearchContextMenu.show(searchVBox, p.getX(), p.getY());
     }
 
 }
