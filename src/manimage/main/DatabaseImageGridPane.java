@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
@@ -502,6 +503,29 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         }
         updateVisibleThumbnails();
 
+    }
+
+    void updateWidth(double width) {
+        final int cols = columnWidth();
+        final int targetCols = (int) (width / 155);
+        if (targetCols == cols) return;
+
+        getChildren().clear();
+        if (targetCols < cols) {
+            for (int i = 0; i < cols-targetCols; i++) {
+                getColumnConstraints().remove(getColumnConstraints().size() - 1);
+            }
+        } else {
+            for (int i = 0; i < targetCols-cols; i++) {
+                getColumnConstraints().add(new ColumnConstraints());
+            }
+        }
+        int i = 0;
+        for (GridImageView view : imageViews) {
+            add(view, i % columnWidth(), i / columnWidth());
+            i++;
+        }
+        updateVisibleThumbnails();
     }
 
     private GridImageView createNewGridView(int index, ImageInfo image) {

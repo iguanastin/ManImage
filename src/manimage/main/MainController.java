@@ -90,8 +90,6 @@ public class MainController {
 
     private boolean tagTabToggledOpen = true;
 
-    private ImageInfo currentPreview;
-
 
     public MainController() {
         if (System.getProperty("os.name").contains("Windows")) dbPath = System.getProperty("user.home") + "\\manimage";
@@ -189,6 +187,8 @@ public class MainController {
             event.consume();
         });
 
+        gridScrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue) -> grid.updateWidth(newValue.getWidth()));
+
         initProperties();
 
         Platform.runLater(() -> {
@@ -247,7 +247,6 @@ public class MainController {
         }
 
         if (info != null) {
-            currentPreview = info;
             if (Main.IMAGE_FILTER.accept(info.getPath())) {
                 previewImage(info);
             } else if (Main.supportVideo && Main.VIDEO_FILTER.accept(info.getPath())) {
@@ -259,7 +258,6 @@ public class MainController {
         } else {
             previewDynamicImageView.setImage(null);
             tagTabListView.getItems().clear();
-            currentPreview = null;
         }
     }
 

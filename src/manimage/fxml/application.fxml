@@ -23,7 +23,7 @@
 
 <BorderPane fx:id="rootPane" onKeyPressed="#rootPaneKeyPressed" prefHeight="1054.0" prefWidth="1096.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="manimage.main.MainController">
     <center>
-        <SplitPane fx:id="primarySplitPane" dividerPositions="0.555">
+        <SplitPane fx:id="primarySplitPane" dividerPositions="0.6096892138939671">
             <BorderPane minWidth="300.0">
                 <center>
                     <manimage.main.DynamicImageView fx:id="previewDynamicImageView" pickOnBounds="true" BorderPane.alignment="CENTER" />
@@ -42,7 +42,7 @@
                </BorderPane>
             </left>
             </BorderPane>
-            <BorderPane minWidth="330.0">
+            <BorderPane minWidth="175.0">
                 <center>
                     <BorderPane>
                         <center>
