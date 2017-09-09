@@ -6,10 +6,7 @@ import com.sun.istack.internal.NotNull;
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.ListIterator;
+import java.util.*;
 
 public class DBInterface {
 
@@ -200,6 +197,25 @@ public class DBInterface {
         state.close();
 
         if (!isBatch) notifyChangeListeners();
+    }
+
+    public synchronized Map<String, Integer> getTags() throws SQLException {
+        Map<String, Integer> map = new HashMap<>();
+
+        Statement s = connection.createStatement();
+        ResultSet rs = s.executeQuery("SELECT imgs.img_tags FROM imgs");
+        while (rs.next()) {
+            String[] tags = imgTagsStringToArray(rs.getNString(1));
+            for (String tag : tags) {
+                if (map.containsKey(tag)) {
+                    map.put(tag, map.get(tag) + 1);
+                } else {
+                    map.put(tag, 1);
+                }
+            }
+        }
+
+        return map;
     }
 
     public static String imgTagsArrayToString(String[] tags) {

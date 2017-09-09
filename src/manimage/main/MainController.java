@@ -24,6 +24,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
 import manimage.common.SimilarPair;
@@ -48,8 +49,6 @@ public class MainController {
 
 
     public DynamicImageView previewDynamicImageView;
-    public Label previewTagsLabel;
-
     public ScrollPane gridScrollPane;
     public DatabaseImageGridPane grid;
     public ChoiceBox primaryOrderByChoiceBox;
@@ -65,6 +64,9 @@ public class MainController {
     public BorderPane rootPane;
     public SplitPane primarySplitPane;
     public Button allInSearchButton;
+    public Label tagTabToggleLabel;
+    public BorderPane tagTabPane;
+    public ListView<String> tagTabListView;
 
     private DBInterface db;
 
@@ -85,6 +87,10 @@ public class MainController {
     private String propertiesFilePath = "manimage.properties";
 
     private ContextMenu allInSearchContextMenu;
+
+    private boolean tagTabToggledOpen = true;
+
+    private ImageInfo currentPreview;
 
 
     public MainController() {
@@ -128,6 +134,9 @@ public class MainController {
         secondaryOrderByChoiceBox.setItems(items);
         secondaryOrderByChoiceBox.setValue(items.get(0));
         secondaryOrderByDescendingToggle.setSelected(grid.isSecondaryOrderDescending());
+
+        tagTabPane.heightProperty().addListener((observable, oldValue, newValue) -> tagTabToggleLabel.setPrefHeight(newValue.doubleValue()));
+        tagTabListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         rootPane.setOnDragOver(event -> {
             if (event.getGestureSource() == null && (event.getDragboard().hasFiles() || event.getDragboard().hasUrl())) {
@@ -238,26 +247,47 @@ public class MainController {
         }
 
         if (info != null) {
+            currentPreview = info;
             if (Main.IMAGE_FILTER.accept(info.getPath())) {
-                previewDynamicImageView.setImage(info.getImage(true));
-                previewTagsLabel.setText(String.join(", ", info.getTags()));
+                previewImage(info);
             } else if (Main.supportVideo && Main.VIDEO_FILTER.accept(info.getPath())) {
-                Rectangle2D screen = Screen.getPrimary().getVisualBounds();
-                WritableImage img = new WritableImage((int) screen.getWidth(), (int) screen.getHeight());
-                //TODO: Fix video viewing aspect ratio
-                mediaPlayerComponent = new CanvasPlayerComponent(img);
-                previewDynamicImageView.setImage(img);
-                mediaPlayerComponent.getMediaPlayer().prepareMedia(info.getPath().getAbsolutePath());
-                mediaPlayerComponent.getMediaPlayer().start();
-                mediaPlayerComponent.getMediaPlayer().setRepeat(true);
-                previewTagsLabel.setText(String.join(", ", info.getTags()));
+                previewVideo(info);
             } else {
                 Main.showErrorMessage("Error", "Unsupported file extension", info.getPath().getAbsolutePath());
                 preview(null);
             }
         } else {
             previewDynamicImageView.setImage(null);
-            previewTagsLabel.setText(null);
+            tagTabListView.getItems().clear();
+            currentPreview = null;
+        }
+    }
+
+    private void previewVideo(ImageInfo info) {
+        Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+        WritableImage img = new WritableImage((int) screen.getWidth(), (int) screen.getHeight());
+        //TODO: Fix video viewing aspect ratio
+        mediaPlayerComponent = new CanvasPlayerComponent(img);
+        previewDynamicImageView.setImage(img);
+        mediaPlayerComponent.getMediaPlayer().prepareMedia(info.getPath().getAbsolutePath());
+        mediaPlayerComponent.getMediaPlayer().start();
+        mediaPlayerComponent.getMediaPlayer().setRepeat(true);
+        tagTabListView.getItems().clear();
+        tagTabListView.getItems().addAll(info.getTags());
+        Collections.sort(tagTabListView.getItems());
+    }
+
+    private void previewImage(ImageInfo info) {
+        previewDynamicImageView.setImage(info.getImage(true));
+        try {
+            Map<String, Integer> tags = db.getTags();
+            tagTabListView.getItems().clear();
+            for (String tag : info.getTags()) {
+                tagTabListView.getItems().add(tag + " (" + tags.get(tag) + ")");
+            }
+            Collections.sort(tagTabListView.getItems());
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -664,6 +694,37 @@ public class MainController {
     public void allInSearchButtonOnAction(ActionEvent event) {
         Point2D p = allInSearchButton.localToScreen(allInSearchButton.getLayoutX(), allInSearchButton.getLayoutY());
         allInSearchContextMenu.show(searchVBox, p.getX(), p.getY());
+    }
+
+    public void tagTabMouseEntered(MouseEvent event) {
+        if (!tagTabToggledOpen) {
+            tagTabPane.setPrefWidth(200);
+            tagTabListView.setVisible(true);
+            event.consume();
+        }
+    }
+
+    public void tagTabMouseExited(MouseEvent event) {
+        if (!tagTabToggledOpen) {
+            tagTabPane.setPrefWidth(tagTabToggleLabel.getWidth());
+            tagTabListView.setVisible(false);
+            event.consume();
+        }
+    }
+
+    public void tagTabToggleClicked(MouseEvent event) {
+        if (tagTabToggledOpen) {
+            tagTabPane.setPrefWidth(tagTabToggleLabel.getWidth());
+            tagTabListView.setVisible(false);
+            tagTabToggleLabel.setText(">");
+            tagTabToggledOpen = false;
+        } else {
+            tagTabPane.setPrefWidth(200);
+            tagTabListView.setVisible(true);
+            tagTabToggleLabel.setText("<");
+            tagTabToggledOpen = true;
+        }
+        event.consume();
     }
 
 }
