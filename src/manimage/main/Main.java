@@ -3,23 +3,19 @@ package manimage.main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.*;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import manimage.common.HistogramReadException;
-import manimage.common.ImageHistogram;
 import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.discovery.NativeDiscovery;
 
-import java.io.File;
 import java.io.FileFilter;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.IOException;
 
 public class Main extends Application {
 
@@ -54,7 +50,7 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage mainStage) throws Exception {
+    public void start(Stage mainStage) {
 
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
 
@@ -69,14 +65,18 @@ public class Main extends Application {
         //------------ Build main stage --------------------------------------------------------------------------------
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/application.fxml"));
-        Parent mainRoot = loader.load();
+        Parent mainRoot = null;
+        try {
+            mainRoot = loader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Main.showErrorMessage("Unexpected FATAL Error", "Error loading FXML template", e.getLocalizedMessage());
+            Platform.exit();
+            System.exit(0);
+        }
         mainStage.setTitle("ManImage");
         mainStage.setScene(new Scene(mainRoot, screen.getWidth() * 0.8, screen.getHeight() * 0.8));
         mainStage.show();
-
-//        Parent mainRoot = FXMLLoader.load(getClass().getResource("/manimage/fxml/duplicateresolver.fxml"));
-//        mainStage.setScene(new Scene(mainRoot, screen.getWidth() * 0.8, screen.getHeight() * 0.8));
-//        mainStage.show();
     }
 
     public static void main(String[] args) {

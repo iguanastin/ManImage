@@ -132,6 +132,7 @@ public class DuplicateResolverController {
             display(index);
         } catch (SQLException e) {
             e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error removing image from database", e.getLocalizedMessage());
         }
     }
 
@@ -145,6 +146,7 @@ public class DuplicateResolverController {
             display(index);
         } catch (SQLException e) {
             e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error removing image from database", e.getLocalizedMessage());
         }
     }
 

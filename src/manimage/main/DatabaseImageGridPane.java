@@ -68,8 +68,9 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
             if (!selected.isEmpty()) {
                 try {
                     Runtime.getRuntime().exec("explorer.exe /select, " + getFirstSelected().getInfo().getPath());
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Main.showErrorMessage("Unexpected Error", "Error opening file explorer", e.getLocalizedMessage());
                 }
             }
         });
@@ -348,6 +349,7 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
                 db.removeImgs(imgs);
             } catch (SQLException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error removing images from database", e.getLocalizedMessage());
             }
 //            unselectAll();
         }
@@ -385,12 +387,14 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
                         db.removeTag(imgs, tag.substring(1), true);
                     } catch (SQLException e) {
                         e.printStackTrace();
+                        Main.showErrorMessage("Unexpected Error", "Error removing tag from image", e.getLocalizedMessage());
                     }
                 } else {
                     try {
                         db.addTag(imgs, tag, true);
                     } catch (SQLException e) {
                         e.printStackTrace();
+                        Main.showErrorMessage("Unexpected Error", "Error adding tag to image", e.getLocalizedMessage());
                     }
                 }
             }
@@ -429,8 +433,9 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
         ArrayList<ImageInfo> images;
         try {
             images = db.getImages(pageLength, pageLength * pageNum, new OrderBy(primaryOrder, primaryOrderDescending, secondaryOrder, secondaryOrderDescending), searchTags, searchFilePath);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error retrieving images from database", e.getLocalizedMessage());
             return;
         }
         ArrayList<GridImageView> pool = (ArrayList<GridImageView>) imageViews.clone();

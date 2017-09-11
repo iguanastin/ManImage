@@ -11,7 +11,6 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.PixelFormat;
@@ -24,7 +23,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
 import manimage.common.SimilarPair;
@@ -116,7 +114,7 @@ public class MainController {
             db = new DBInterface(dbPath, dbUser, dbPass);
         } catch (SQLException ex) {
             ex.printStackTrace();
-            Main.showErrorMessage("Error!", "Database is already in use and cannot be opened", ex.getLocalizedMessage());
+            Main.showErrorMessage("Error!", "Database could not be opened", ex.getLocalizedMessage());
             closeWindow();
         }
 
@@ -155,6 +153,7 @@ public class MainController {
                     fc.setInitialFileName(URLDecoder.decode(url, "UTF-8").substring(url.lastIndexOf("/") + 1));
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
+                    Main.showErrorMessage("Unexpected Error", "Error decoding url to plaintext", e.getLocalizedMessage());
                 }
                 fc.setInitialDirectory(lastSaveFolder);
                 File target = fc.showSaveDialog(rootPane.getScene().getWindow());
@@ -175,11 +174,12 @@ public class MainController {
                                     db.addImage(target.getAbsolutePath());
                                 } catch (SQLException e) {
                                     e.printStackTrace();
+                                    Main.showErrorMessage("Unexpected Error", "Error adding image to database", e.getLocalizedMessage());
                                 }
                             });
                         } catch (IOException e) {
                             e.printStackTrace();
-                            Main.showErrorMessage("Error!", "Error saving file from URL", e.getMessage());
+                            Main.showErrorMessage("Unexpected Error", "Error saving file from URL", e.getLocalizedMessage());
                         }
                     }).start();
                 }
@@ -211,28 +211,29 @@ public class MainController {
         if (propsFile.exists()) {
             try {
                 properties.load(new FileReader(propsFile));
-
-                if (properties.containsKey("lastLoadFolder"))
-                    lastFolder = new File(properties.getProperty("lastLoadFolder"));
-                if (properties.containsKey("lastSaveFolder"))
-                    lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
-                Platform.runLater(() -> {
-                    if (properties.containsKey("x"))
-                        rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
-                    if (properties.containsKey("y"))
-                        rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
-                    if (properties.containsKey("width"))
-                        rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
-                    if (properties.containsKey("height"))
-                        rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
-                    if (properties.containsKey("maximized"))
-                        ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
-                    if (properties.containsKey("splitPercent"))
-                        primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
-                });
             } catch (IOException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error loading properties file", e.getLocalizedMessage());
             }
+
+            if (properties.containsKey("lastLoadFolder"))
+                lastFolder = new File(properties.getProperty("lastLoadFolder"));
+            if (properties.containsKey("lastSaveFolder"))
+                lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
+            Platform.runLater(() -> {
+                if (properties.containsKey("x"))
+                    rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
+                if (properties.containsKey("y"))
+                    rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
+                if (properties.containsKey("width"))
+                    rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
+                if (properties.containsKey("height"))
+                    rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
+                if (properties.containsKey("maximized"))
+                    ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
+                if (properties.containsKey("splitPercent"))
+                    primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
+            });
         }
     }
 
@@ -286,6 +287,7 @@ public class MainController {
             Collections.sort(tagTabListView.getItems());
         } catch (SQLException e) {
             e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error retrieving tags list from database", e.getLocalizedMessage());
         }
     }
 
@@ -302,18 +304,20 @@ public class MainController {
     }
 
     private void saveProperties() {
+        if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
+        if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
+        properties.setProperty("maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized() + "");
+        properties.setProperty("x", "" + rootPane.getScene().getWindow().getX());
+        properties.setProperty("y", "" + rootPane.getScene().getWindow().getY());
+        properties.setProperty("width", "" + rootPane.getScene().getWindow().getWidth());
+        properties.setProperty("height", "" + rootPane.getScene().getWindow().getHeight());
+        properties.setProperty("splitPercent", "" + primarySplitPane.getDividerPositions()[0]);
+
         try {
-            if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
-            if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
-            properties.setProperty("maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized() + "");
-            properties.setProperty("x", "" + rootPane.getScene().getWindow().getX());
-            properties.setProperty("y", "" + rootPane.getScene().getWindow().getY());
-            properties.setProperty("width", "" + rootPane.getScene().getWindow().getWidth());
-            properties.setProperty("height", "" + rootPane.getScene().getWindow().getHeight());
-            properties.setProperty("splitPercent", "" + primarySplitPane.getDividerPositions()[0]);
             properties.store(new FileOutputStream(propertiesFilePath), null);
         } catch (IOException e) {
             e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error saving properties file", e.getLocalizedMessage());
         }
     }
 
@@ -368,6 +372,7 @@ public class MainController {
                 db.addBatchImages(work);
             } catch (SQLException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
             lastFolder = files.get(0).getParentFile();
@@ -383,6 +388,7 @@ public class MainController {
                 db.addBatchImages(Arrays.asList(files));
             } catch (SQLException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
             lastFolder = folder.getParentFile();
@@ -401,6 +407,7 @@ public class MainController {
                 db.addBatchImages(files);
             } catch (SQLException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
             lastFolder = folder.getParentFile();
@@ -594,6 +601,7 @@ public class MainController {
                 stage.showAndWait();
             } catch (IOException e) {
                 e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error loading FXML template", e.getLocalizedMessage());
             }
             event.consume();
         } else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.A) {
@@ -625,8 +633,9 @@ public class MainController {
             try {
                 db.cleanDB();
                 preview(null);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error cleaning database", e.getLocalizedMessage());
             }
         }
     }
