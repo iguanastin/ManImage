@@ -595,7 +595,7 @@ public class MainController {
             }
             try {
                 Stage stage = new Stage();
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/duplicateresolver.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/duplicateresolver.fxml"));
                 stage.setScene(new Scene(loader.load(), Screen.getPrimary().getVisualBounds().getWidth() * 0.8, Screen.getPrimary().getVisualBounds().getHeight() * 0.8));
                 ((DuplicateResolverController) loader.getController()).setDataset(db, pairs);
                 stage.showAndWait();

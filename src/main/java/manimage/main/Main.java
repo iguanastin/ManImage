@@ -64,7 +64,7 @@ public class Main extends Application {
 
         //------------ Build main stage --------------------------------------------------------------------------------
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/manimage/fxml/application.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/application.fxml"));
         Parent mainRoot = null;
         try {
             mainRoot = loader.load();

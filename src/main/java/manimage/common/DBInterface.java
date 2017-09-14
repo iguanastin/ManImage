@@ -1,8 +1,6 @@
 package manimage.common;
 
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.sql.*;
@@ -119,7 +117,7 @@ public class DBInterface {
         return results;
     }
 
-    private synchronized void addImage(@NotNull String path, String src, String tags, boolean isBatch) throws SQLException {
+    private synchronized void addImage(String path, String src, String tags, boolean isBatch) throws SQLException {
         ArrayList<String> columns = new ArrayList<>();
         ArrayList<String> strings = new ArrayList<>();
 
@@ -157,7 +155,7 @@ public class DBInterface {
         if (!isBatch) notifyChangeListeners();
     }
 
-    public synchronized void addImage(@NotNull String path) throws SQLException {
+    public synchronized void addImage(String path) throws SQLException {
         addImage(path, null, " tagme ", false);
     }
 

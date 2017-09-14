@@ -1,11 +1,8 @@
 package manimage.common;
 
 
-import com.sun.istack.internal.NotNull;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
-
-import java.util.ArrayList;
 
 public final class ImageHistogram {
 
@@ -14,7 +11,7 @@ public final class ImageHistogram {
     private final double[] green = new double[256];
     private final double[] blue = new double[256];
 
-    public ImageHistogram(@NotNull final Image image) throws HistogramReadException {
+    public ImageHistogram(final Image image) throws HistogramReadException {
         if (image.isBackgroundLoading() && image.getProgress() != 1) {
             Object lock = new Object();
             synchronized (lock) {
