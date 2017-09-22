@@ -8,63 +8,92 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="387.0" prefWidth="411.0" xmlns="http://javafx.com/javafx/8.0.112-ea" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="405.0" prefWidth="560.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1">
    <bottom>
       <HBox alignment="CENTER_RIGHT" spacing="5.0">
-         <children>
-            <Button mnemonicParsing="false" text="Accept" />
-            <Button mnemonicParsing="false" text="Cancel" />
-         </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
+         <Button mnemonicParsing="false" text="Accept" />
+         <Button mnemonicParsing="false" text="Cancel" />
       </HBox>
    </bottom>
    <center>
       <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-         <children>
-            <HBox spacing="5.0">
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-               <children>
-                  <Label text="Database" />
-               </children></HBox>
-            <HBox alignment="CENTER_LEFT" spacing="5.0">
-               <children>
-                  <Label text="Username:">
-                     <padding>
-                        <Insets left="25.0" />
-                     </padding></Label>
-                  <TextField />
-               </children>
-               <padding>
-                  <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
-               </padding>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" spacing="5.0">
-               <children>
-                  <Label text="Password:">
-                     <padding>
-                        <Insets left="25.0" />
-                     </padding></Label>
-                  <TextField />
-               </children>
-               <padding>
-                  <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
-               </padding>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" spacing="5.0">
-               <padding>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </padding>
-               <children>
-                  <Label text="Properties File:" />
-                  <Button mnemonicParsing="false" text="Browse" />
-                  <TextField prefWidth="175.0" />
-               </children>
-            </HBox>
-         </children>
+         <HBox spacing="5.0">
+            <padding>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </padding>
+            <Label text="Database" />
+         </HBox>
+         <HBox alignment="CENTER_LEFT" spacing="5.0">
+            <padding>
+               <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
+            </padding>
+            <Label text="Username:">
+               <HBox.margin>
+                  <Insets left="25.0" />
+               </HBox.margin>
+            </Label>
+            <TextField text="sa" HBox.hgrow="ALWAYS" />
+         </HBox>
+         <HBox alignment="CENTER_LEFT" spacing="5.0">
+            <padding>
+               <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
+            </padding>
+            <Label text="Password:">
+               <HBox.margin>
+                  <Insets left="25.0" />
+               </HBox.margin>
+            </Label>
+            <TextField HBox.hgrow="ALWAYS" />
+         </HBox>
+         <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="66.0" spacing="5.0">
+            <padding>
+               <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
+            </padding>
+            <children>
+               <Label text="Folder:">
+                  <HBox.margin>
+                     <Insets left="25.0" />
+                  </HBox.margin>
+               </Label>
+               <Button mnemonicParsing="false" text="Browse" />
+               <TextField text="~/" HBox.hgrow="ALWAYS" />
+            </children>
+         </HBox>
+         <HBox alignment="CENTER_LEFT" spacing="5.0">
+            <padding>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="20.0" />
+            </padding>
+            <Label text="Properties File:" />
+            <Button mnemonicParsing="false" text="Browse" />
+            <TextField prefWidth="175.0" text="manimage.properties" HBox.hgrow="ALWAYS" />
+         </HBox>
+         <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="124.0" spacing="5.0">
+            <padding>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="20.0" />
+            </padding>
+            <children>
+               <Label text="Keybinds" />
+            </children>
+         </HBox>
+         <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="66.0" spacing="5.0">
+            <padding>
+               <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
+            </padding>
+            <children>
+               <Button mnemonicParsing="false" text="Change">
+                  <HBox.margin>
+                     <Insets left="25.0" />
+                  </HBox.margin>
+               </Button>
+               <Label text="Quit: Ctrl+Q" />
+            </children>
+         </HBox>
+         <padding>
+            <Insets left="5.0" right="5.0" />
+         </padding>
       </VBox>
    </center>
 </BorderPane>
