@@ -494,7 +494,7 @@ public class MainController {
 
     //-------------------- Listeners -----------------------------------------------------------------------------------
 
-    public void addFilesClicked(ActionEvent event) {
+    private void requestFilesToAdd() {
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
@@ -504,7 +504,7 @@ public class MainController {
         addFiles(files);
     }
 
-    public void addFolderClicked(ActionEvent event) {
+    private void requestFolderToAdd() {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder");
         dc.setInitialDirectory(lastFolder);
@@ -513,25 +513,13 @@ public class MainController {
         addFolder(folder);
     }
 
-    public void addRecurseFolderClicked(ActionEvent event) {
+    private void requestRecursiveFolderToAdd() {
         final DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder and all subfolders");
         dc.setInitialDirectory(lastFolder);
         final File folder = dc.showDialog(rootPane.getScene().getWindow());
 
         addRecurseFolder(folder);
-    }
-
-    public void exitClicked(ActionEvent event) {
-        closeWindow();
-    }
-
-    public void aboutMenuActivated(ActionEvent event) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION);
-        a.setContentText("a\nb\nc\nd\ne");
-        a.setTitle("About");
-        a.setHeaderText("ManImage");
-        a.showAndWait();
     }
 
     public void gridScrollPaneClicked(MouseEvent event) {
@@ -623,23 +611,6 @@ public class MainController {
         grid.updateVisibleThumbnails();
     }
 
-    public void clearAllOnAction(ActionEvent event) {
-        Alert d = new Alert(Alert.AlertType.CONFIRMATION);
-        d.setTitle("Clear Database");
-        d.setHeaderText("Erase all data in database?");
-        d.setContentText(" All data will be lost!");
-        Optional result = d.showAndWait();
-        if (result.get() == ButtonType.OK) {
-            try {
-                db.cleanDB();
-                preview(null);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                Main.showErrorMessage("Unexpected Error", "Error cleaning database", e.getLocalizedMessage());
-            }
-        }
-    }
-
     public void onSearchButtonAction(ActionEvent event) {
         applySearchFilter();
     }
@@ -673,22 +644,39 @@ public class MainController {
     public void rootPaneKeyPressed(KeyEvent event) {
         if (event.isControlDown() && event.getCode() == KeyCode.Q) {
             closeWindow();
+            event.consume();
         } else if (event.isControlDown() && event.getCode() == KeyCode.F) {
             searchTagsTextfield.requestFocus();
+            event.consume();
+        } else if (event.isControlDown() && event.getCode() == KeyCode.I) {
+            Alert a = new Alert(Alert.AlertType.CONFIRMATION);
+            a.setTitle("Folder or Files");
+            a.setContentText("Import folder or files?");
+            ButtonType folderButton = new ButtonType("Folder", ButtonBar.ButtonData.YES);
+            ButtonType filesButton = new ButtonType("Files", ButtonBar.ButtonData.NO);
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            a.getButtonTypes().setAll(folderButton, filesButton, cancel);
+            a.showAndWait().ifPresent(type -> {
+                if (type == folderButton) {
+                    Alert a2 = new Alert(Alert.AlertType.CONFIRMATION);
+                    a2.setTitle("Recursive");
+                    a2.setContentText("Recursively add sub-folders?");
+                    ButtonType yesButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+                    ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
+                    a2.getButtonTypes().setAll(yesButton, noButton, cancel);
+                    a2.showAndWait().ifPresent(type2 -> {
+                        if (type2 == yesButton) {
+                            requestRecursiveFolderToAdd();
+                        } else if (type2 == noButton) {
+                            requestFolderToAdd();
+                        }
+                    });
+                } else if (type == filesButton) {
+                    requestFilesToAdd();
+                }
+            });
+            event.consume();
         }
-    }
-
-    public void hotkeysMenuActivated(ActionEvent event) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION);
-        a.setTitle("Help");
-        a.setHeaderText("Hotkeys");
-        a.setContentText("Ctrl+E\t\tEdit tags of the selected images\n" +
-                "Ctrl+Q\t\tQuit ManImage\n" +
-                "Ctrl+F\t\tFocus the tag searchbar\n" +
-                "Ctrl+A\t\tSelect all/no images\n" +
-                "Ctrl+PgDwn\tGo to next page\n" +
-                "Ctrl+PgUp\tGo to previous page");
-        a.showAndWait();
     }
 
     public void searchPaneKeyPressed(KeyEvent event) {

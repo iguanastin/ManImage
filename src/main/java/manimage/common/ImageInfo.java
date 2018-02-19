@@ -31,8 +31,8 @@ public class ImageInfo {
     private SoftReference<Image> thumbnail;
     private ImageHistogram histogram;
 
-    private static final String[] VLC_ARGS = {"--intf", "dummy", "--vout", "dummy", "--no-audio", "--no-osd", "--no-spu", "--no-stats", "--no-sub-autodetect-file", "--no-inhibit", "--no-disable-screensaver", "--no-snapshot-preview"};
-    private static final MediaPlayer thumbnailMediaPlayer = new MediaPlayerFactory(VLC_ARGS).newHeadlessMediaPlayer();
+    private static final String[] VLC_ARGS = {"--intf", "dummy", "--vout", "dummy", "--no-audio", "--no-osd", "--no-spu", "--no-stats", "--no-sub-autodetect-file", "--no-disable-screensaver", "--no-snapshot-preview"};
+//    private static final MediaPlayer thumbnailMediaPlayer = new MediaPlayerFactory(VLC_ARGS).newHeadlessMediaPlayer();
 
     public static final int THUMBNAIL_SIZE = 150;
 
@@ -80,12 +80,13 @@ public class ImageInfo {
                 thumbnail = new SoftReference<>(img);
                 return img;
             } else if (Main.VIDEO_FILTER.accept(path)) {
-                thumbnailMediaPlayer.prepareMedia("file:" + path.getAbsolutePath());
-                thumbnailMediaPlayer.setPosition(0.3f);
-                BufferedImage bi = thumbnailMediaPlayer.getSnapshot(THUMBNAIL_SIZE, 0);
-                Image img = SwingFXUtils.toFXImage(bi, null);
-                thumbnail = new SoftReference<>(img);
-                return img;
+//                thumbnailMediaPlayer.prepareMedia("file:" + path.getAbsolutePath());
+//                thumbnailMediaPlayer.setPosition(0.3f);
+//                BufferedImage bi = thumbnailMediaPlayer.getSnapshot(THUMBNAIL_SIZE, 0);
+//                Image img = SwingFXUtils.toFXImage(bi, null);
+//                thumbnail = new SoftReference<>(img);
+//                return img;
+                return null;
             }
         }
 
