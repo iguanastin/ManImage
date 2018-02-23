@@ -4,6 +4,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
@@ -555,6 +556,11 @@ public class DatabaseImageGridPane extends GridPane implements ImageDatabaseUpda
                 selected.forEach(item -> files.add(item.getInfo().getPath()));
                 MainController.clipboard.putFiles(files);
                 db.setContent(MainController.clipboard);
+                if (getLastSelected().getInfo().getThumbnail().getProgress() == 1.0) {
+                    db.setDragView(getLastSelected().getInfo().getThumbnail());
+                } else {
+                    db.setDragView(new Image(getLastSelected().getInfo().getPath().toURI().toString(), ImageInfo.THUMBNAIL_SIZE, ImageInfo.THUMBNAIL_SIZE, true, false));
+                }
                 event.consume();
             }
         });
