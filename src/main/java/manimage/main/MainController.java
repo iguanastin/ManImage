@@ -31,10 +31,13 @@ import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -149,12 +152,8 @@ public class MainController {
                 FileChooser fc = new FileChooser();
                 fc.setTitle("Save Image As");
                 fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
-                try {
-                    fc.setInitialFileName(URLDecoder.decode(url, "UTF-8").substring(url.lastIndexOf("/") + 1));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                    Main.showErrorMessage("Unexpected Error", "Error decoding url to plaintext", e.getLocalizedMessage());
-                }
+                String fn = URI.create(url).getPath().replaceAll("^.*/", "");
+                fc.setInitialFileName(fn);
                 fc.setInitialDirectory(lastSaveFolder);
                 File target = fc.showSaveDialog(rootPane.getScene().getWindow());
 
