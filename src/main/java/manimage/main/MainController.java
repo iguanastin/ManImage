@@ -150,39 +150,26 @@ public class MainController {
             if (files != null && !files.isEmpty()) {
                 addFiles(files);
             } else if (url != null && !url.isEmpty()) {
+                String filename = URI.create(url).getPath().replaceAll("^.*/", "");
                 Platform.runLater(() -> {
-                    FileChooser fc = new FileChooser();
-                    fc.setTitle("Save Image As");
-                    fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
-                    fc.setInitialFileName(URI.create(url).getPath().replaceAll("^.*/", ""));
-                    String path = settings.getString("last_save_folder", null);
-                    if (path != null) fc.setInitialDirectory(new File(path));
-                    File target = fc.showSaveDialog(rootPane.getScene().getWindow());
+                    if (!settings.getBoolean("auto_add_dropped", false) || settings.getString("last_folder", null) == null || !new File(settings.getString("last_folder", null)).exists()) {
+                        FileChooser fc = new FileChooser();
+                        fc.setTitle("Save Image As");
+                        fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
+                        fc.setInitialFileName(filename);
+                        String path = settings.getString("last_folder", null);
+                        if (path != null) fc.setInitialDirectory(new File(path));
+                        File target = fc.showSaveDialog(rootPane.getScene().getWindow());
 
-                    if (target != null) {
-                        new Thread(() -> {
-                            try {
-                                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                                conn.addRequestProperty("User-Agent", "Mozilla/4.0");
-                                ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-                                FileOutputStream fos = new FileOutputStream(target);
-                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                        if (target != null) {
+                            downloadImageAndSave(url, target);
+                        }
+                    } else {
+                        String path = settings.getString("last_folder", null);
+                        if (!path.endsWith("/")) path += "/";
+                        File target = new File(path + filename);
 
-                                settings.setString("last_save_folder", target.getParentFile().getAbsolutePath());
-
-                                Platform.runLater(() -> {
-                                    try {
-                                        db.addImage(target.getAbsolutePath());
-                                    } catch (SQLException e) {
-                                        e.printStackTrace();
-                                        Main.showErrorMessage("Unexpected Error", "Error adding image to database", e.getLocalizedMessage());
-                                    }
-                                });
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                Main.showErrorMessage("Unexpected Error", "Error saving file from URL", e.getLocalizedMessage());
-                            }
-                        }).start();
+                        downloadImageAndSave(url, target);
                     }
                 });
             }
@@ -205,6 +192,32 @@ public class MainController {
             grid.requestFocus();
         });
 
+    }
+
+    private void downloadImageAndSave(String url, File target) {
+        new Thread(() -> {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.addRequestProperty("User-Agent", "Mozilla/4.0");
+                ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+                FileOutputStream fos = new FileOutputStream(target);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+                settings.setString("last_folder", target.getParentFile().getAbsolutePath());
+
+                Platform.runLater(() -> {
+                    try {
+                        db.addImage(target.getAbsolutePath());
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        Main.showErrorMessage("Unexpected Error", "Error adding image to database", e.getLocalizedMessage());
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error saving file from URL", e.getLocalizedMessage());
+            }
+        }).start();
     }
 
     private void initProperties() {
