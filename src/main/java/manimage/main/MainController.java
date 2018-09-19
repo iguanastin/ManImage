@@ -149,39 +149,40 @@ public class MainController {
             if (files != null && !files.isEmpty()) {
                 addFiles(files);
             } else if (url != null && !url.isEmpty()) {
-                FileChooser fc = new FileChooser();
-                fc.setTitle("Save Image As");
-                fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
-                String fn = URI.create(url).getPath().replaceAll("^.*/", "");
-                fc.setInitialFileName(fn);
-                fc.setInitialDirectory(lastSaveFolder);
-                File target = fc.showSaveDialog(rootPane.getScene().getWindow());
+                Platform.runLater(() -> {
+                    FileChooser fc = new FileChooser();
+                    fc.setTitle("Save Image As");
+                    fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
+                    fc.setInitialFileName(URI.create(url).getPath().replaceAll("^.*/", ""));
+                    fc.setInitialDirectory(lastSaveFolder);
+                    File target = fc.showSaveDialog(rootPane.getScene().getWindow());
 
-                if (target != null) {
-                    new Thread(() -> {
-                        try {
-                            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                            conn.addRequestProperty("User-Agent", "Mozilla/4.0");
-                            ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-                            FileOutputStream fos = new FileOutputStream(target);
-                            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    if (target != null) {
+                        new Thread(() -> {
+                            try {
+                                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                                conn.addRequestProperty("User-Agent", "Mozilla/4.0");
+                                ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+                                FileOutputStream fos = new FileOutputStream(target);
+                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
-                            lastSaveFolder = target.getParentFile();
+                                lastSaveFolder = target.getParentFile();
 
-                            Platform.runLater(() -> {
-                                try {
-                                    db.addImage(target.getAbsolutePath());
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                    Main.showErrorMessage("Unexpected Error", "Error adding image to database", e.getLocalizedMessage());
-                                }
-                            });
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            Main.showErrorMessage("Unexpected Error", "Error saving file from URL", e.getLocalizedMessage());
-                        }
-                    }).start();
-                }
+                                Platform.runLater(() -> {
+                                    try {
+                                        db.addImage(target.getAbsolutePath());
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                        Main.showErrorMessage("Unexpected Error", "Error adding image to database", e.getLocalizedMessage());
+                                    }
+                                });
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Main.showErrorMessage("Unexpected Error", "Error saving file from URL", e.getLocalizedMessage());
+                            }
+                        }).start();
+                    }
+                });
             }
             event.consume();
         });
