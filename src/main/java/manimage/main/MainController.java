@@ -26,15 +26,13 @@ import javafx.stage.Stage;
 import manimage.common.DBInterface;
 import manimage.common.ImageInfo;
 import manimage.common.SimilarPair;
+import manimage.common.settings.Settings;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -73,8 +71,8 @@ public class MainController {
 
     private CanvasPlayerComponent mediaPlayerComponent;
 
-    private File lastFolder;
-    private File lastSaveFolder;
+//    private File lastFolder;
+//    private File lastSaveFolder;
 
     private String[] orderByMap;
 
@@ -86,10 +84,13 @@ public class MainController {
 
     private Properties properties;
     private String propertiesFilePath = "manimage.properties";
+    private String settingsFilepath = "manimage.settings";
 
     private ContextMenu allInSearchContextMenu;
 
     private boolean tagTabToggledOpen = true;
+
+    private Settings settings;
 
 
     public MainController() {
@@ -154,7 +155,8 @@ public class MainController {
                     fc.setTitle("Save Image As");
                     fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
                     fc.setInitialFileName(URI.create(url).getPath().replaceAll("^.*/", ""));
-                    fc.setInitialDirectory(lastSaveFolder);
+                    String path = settings.getString("last_save_folder", null);
+                    if (path != null) fc.setInitialDirectory(new File(path));
                     File target = fc.showSaveDialog(rootPane.getScene().getWindow());
 
                     if (target != null) {
@@ -166,7 +168,7 @@ public class MainController {
                                 FileOutputStream fos = new FileOutputStream(target);
                                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
-                                lastSaveFolder = target.getParentFile();
+                                settings.setString("last_save_folder", target.getParentFile().getAbsolutePath());
 
                                 Platform.runLater(() -> {
                                     try {
@@ -190,6 +192,11 @@ public class MainController {
         gridScrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue) -> grid.updateWidth(newValue.getWidth()));
 
         initProperties();
+        try {
+            settings = new Settings(new File(settingsFilepath));
+        } catch (FileNotFoundException e) {
+            settings = new Settings();
+        }
 
         Platform.runLater(() -> {
             rootPane.getScene().getWindow().setOnCloseRequest(event -> {
@@ -216,25 +223,28 @@ public class MainController {
                 Main.showErrorMessage("Unexpected Error", "Error loading properties file", e.getLocalizedMessage());
             }
 
-            if (properties.containsKey("lastLoadFolder"))
-                lastFolder = new File(properties.getProperty("lastLoadFolder"));
-            if (properties.containsKey("lastSaveFolder"))
-                lastSaveFolder = new File(properties.getProperty("lastSaveFolder"));
             Platform.runLater(() -> {
-                if (properties.containsKey("x"))
-                    rootPane.getScene().getWindow().setX(Double.parseDouble(properties.getProperty("x")));
-                if (properties.containsKey("y"))
-                    rootPane.getScene().getWindow().setY(Double.parseDouble(properties.getProperty("y")));
-                if (properties.containsKey("width"))
-                    rootPane.getScene().getWindow().setWidth(Double.parseDouble(properties.getProperty("width")));
-                if (properties.containsKey("height"))
-                    rootPane.getScene().getWindow().setHeight(Double.parseDouble(properties.getProperty("height")));
-                if (properties.containsKey("maximized"))
-                    ((Stage) rootPane.getScene().getWindow()).setMaximized("true".equalsIgnoreCase(properties.getProperty("maximized")));
-                if (properties.containsKey("splitPercent"))
-                    primarySplitPane.setDividerPosition(0, Double.parseDouble(properties.getProperty("splitPercent")));
+                rootPane.getScene().getWindow().setX(settings.getDouble("window_x", 0));
+                rootPane.getScene().getWindow().setY(settings.getDouble("window_y", 0));
+                rootPane.getScene().getWindow().setWidth(settings.getDouble("window_width", 800));
+                rootPane.getScene().getWindow().setHeight(settings.getDouble("window_height", 600));
+                ((Stage) rootPane.getScene().getWindow()).setMaximized(settings.getBoolean("window_maximized", false));
+                primarySplitPane.setDividerPosition(0, settings.getDouble("window_split_percent", 0.33));
             });
         }
+    }
+
+    private void saveProperties() throws FileNotFoundException {
+//        if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
+//        if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
+        settings.setBoolean("window_maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized());
+        settings.setDouble("window_x", rootPane.getScene().getWindow().getX());
+        settings.setDouble("window_y", rootPane.getScene().getWindow().getY());
+        settings.setDouble("window_width", rootPane.getScene().getWindow().getWidth());
+        settings.setDouble("window_height", rootPane.getScene().getWindow().getHeight());
+        settings.setDouble("window_split_percent", primarySplitPane.getDividerPositions()[0]);
+
+        settings.save(new File(settingsFilepath));
     }
 
     //------------------ Operators -------------------------------------------------------------------------------------
@@ -303,26 +313,13 @@ public class MainController {
         setPage(0);
     }
 
-    private void saveProperties() {
-        if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
-        if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
-        properties.setProperty("maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized() + "");
-        properties.setProperty("x", "" + rootPane.getScene().getWindow().getX());
-        properties.setProperty("y", "" + rootPane.getScene().getWindow().getY());
-        properties.setProperty("width", "" + rootPane.getScene().getWindow().getWidth());
-        properties.setProperty("height", "" + rootPane.getScene().getWindow().getHeight());
-        properties.setProperty("splitPercent", "" + primarySplitPane.getDividerPositions()[0]);
-
-        try {
-            properties.store(new FileOutputStream(propertiesFilePath), null);
-        } catch (IOException e) {
-            e.printStackTrace();
-            Main.showErrorMessage("Unexpected Error", "Error saving properties file", e.getLocalizedMessage());
-        }
-    }
-
     private void closeWindow() {
-        saveProperties();
+        try {
+            saveProperties();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Main.showErrorMessage("Unexpected Error", "Error saving settings to file", e.getLocalizedMessage());
+        }
 
         Platform.exit();
         System.exit(0);
@@ -375,7 +372,7 @@ public class MainController {
                 Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
-            lastFolder = files.get(0).getParentFile();
+            settings.setString("last_folder", files.get(0).getParentFile().getAbsolutePath());
         }
     }
 
@@ -391,7 +388,7 @@ public class MainController {
                 Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
-            lastFolder = folder.getParentFile();
+            settings.setString("last_folder", folder.getParentFile().getAbsolutePath());
         }
     }
 
@@ -410,7 +407,7 @@ public class MainController {
                 Main.showErrorMessage("Unexpected Error", "Error adding batch images to database", e.getLocalizedMessage());
             }
 
-            lastFolder = folder.getParentFile();
+            settings.setString("last_folder", folder.getParentFile().getAbsolutePath());
         }
     }
 
@@ -498,7 +495,8 @@ public class MainController {
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(Main.EXTENSION_FILTER);
         fc.setTitle("Add image(s)");
-        fc.setInitialDirectory(lastFolder);
+        String path = settings.getString("last_folder", null);
+        if (path != null) fc.setInitialDirectory(new File(path));
         List<File> files = fc.showOpenMultipleDialog(rootPane.getScene().getWindow());
 
         addFiles(files);
@@ -507,7 +505,8 @@ public class MainController {
     private void requestFolderToAdd() {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder");
-        dc.setInitialDirectory(lastFolder);
+        String path = settings.getString("last_folder", null);
+        if (path != null) dc.setInitialDirectory(new File(path));
         File folder = dc.showDialog(rootPane.getScene().getWindow());
 
         addFolder(folder);
@@ -516,7 +515,8 @@ public class MainController {
     private void requestRecursiveFolderToAdd() {
         final DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Add folder and all subfolders");
-        dc.setInitialDirectory(lastFolder);
+        String path = settings.getString("last_folder", null);
+        if (path != null) dc.setInitialDirectory(new File(path));
         final File folder = dc.showDialog(rootPane.getScene().getWindow());
 
         addRecurseFolder(folder);
