@@ -169,6 +169,12 @@ public class MainController {
                         if (!path.endsWith("/")) path += "/";
                         File target = new File(path + filename);
 
+                        int i = 1;
+                        while (target.exists()) {
+                            target = new File(path + filename.substring(0, filename.lastIndexOf('.')) + " (" + i + ')' + filename.substring(filename.lastIndexOf('.')));
+                            i++;
+                        }
+
                         downloadImageAndSave(url, target);
                     }
                 });
