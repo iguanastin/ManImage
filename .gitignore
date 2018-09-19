@@ -30,6 +30,7 @@ hs_err_pid*
 
 .idea/
 manimage.properties
+manimage.settings
 out/
 src/test/
 target/
