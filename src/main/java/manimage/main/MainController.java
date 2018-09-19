@@ -192,11 +192,6 @@ public class MainController {
         gridScrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue) -> grid.updateWidth(newValue.getWidth()));
 
         initProperties();
-        try {
-            settings = new Settings(new File(settingsFilepath));
-        } catch (FileNotFoundException e) {
-            settings = new Settings();
-        }
 
         Platform.runLater(() -> {
             rootPane.getScene().getWindow().setOnCloseRequest(event -> {
@@ -213,30 +208,23 @@ public class MainController {
     }
 
     private void initProperties() {
-        properties = new Properties();
-        File propsFile = new File(propertiesFilePath);
-        if (propsFile.exists()) {
-            try {
-                properties.load(new FileReader(propsFile));
-            } catch (IOException e) {
-                e.printStackTrace();
-                Main.showErrorMessage("Unexpected Error", "Error loading properties file", e.getLocalizedMessage());
-            }
-
-            Platform.runLater(() -> {
-                rootPane.getScene().getWindow().setX(settings.getDouble("window_x", 0));
-                rootPane.getScene().getWindow().setY(settings.getDouble("window_y", 0));
-                rootPane.getScene().getWindow().setWidth(settings.getDouble("window_width", 800));
-                rootPane.getScene().getWindow().setHeight(settings.getDouble("window_height", 600));
-                ((Stage) rootPane.getScene().getWindow()).setMaximized(settings.getBoolean("window_maximized", false));
-                primarySplitPane.setDividerPosition(0, settings.getDouble("window_split_percent", 0.33));
-            });
+        try {
+            settings = new Settings(new File(settingsFilepath));
+        } catch (FileNotFoundException e) {
+            settings = new Settings();
         }
+
+        Platform.runLater(() -> {
+            rootPane.getScene().getWindow().setX(settings.getDouble("window_x", 0));
+            rootPane.getScene().getWindow().setY(settings.getDouble("window_y", 0));
+            rootPane.getScene().getWindow().setWidth(settings.getDouble("window_width", 800));
+            rootPane.getScene().getWindow().setHeight(settings.getDouble("window_height", 600));
+            ((Stage) rootPane.getScene().getWindow()).setMaximized(settings.getBoolean("window_maximized", false));
+            primarySplitPane.setDividerPosition(0, settings.getDouble("window_split_percent", 0.33));
+        });
     }
 
     private void saveProperties() throws FileNotFoundException {
-//        if (lastFolder != null) properties.setProperty("lastLoadFolder", lastFolder.getAbsolutePath());
-//        if (lastSaveFolder != null) properties.setProperty("lastSaveFolder", lastSaveFolder.getAbsolutePath());
         settings.setBoolean("window_maximized", ((Stage) rootPane.getScene().getWindow()).isMaximized());
         settings.setDouble("window_x", rootPane.getScene().getWindow().getX());
         settings.setDouble("window_y", rootPane.getScene().getWindow().getY());
@@ -456,7 +444,7 @@ public class MainController {
         return results;
     }
 
-    //------------------- Private classes ------------------------------------------------------------------------------
+//------------------- Private classes ------------------------------------------------------------------------------
 
     private class CanvasPlayerComponent extends DirectMediaPlayerComponent {
 
@@ -487,6 +475,7 @@ public class MainController {
                 }
             });
         }
+
     }
 
     //-------------------- Listeners -----------------------------------------------------------------------------------
@@ -586,6 +575,18 @@ public class MainController {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/duplicateresolver.fxml"));
                 stage.setScene(new Scene(loader.load(), Screen.getPrimary().getVisualBounds().getWidth() * 0.8, Screen.getPrimary().getVisualBounds().getHeight() * 0.8));
                 ((DuplicateResolverController) loader.getController()).setDataset(db, pairs);
+                stage.showAndWait();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Main.showErrorMessage("Unexpected Error", "Error loading FXML template", e.getLocalizedMessage());
+            }
+            event.consume();
+        } else if (event.isControlDown() && event.getCode() == KeyCode.S) {
+            try {
+                Stage stage = new Stage();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/settings.fxml"));
+                stage.setScene(new Scene(loader.load()));
+                ((SettingsController) loader.getController()).setSettings(settings);
                 stage.showAndWait();
             } catch (IOException e) {
                 e.printStackTrace();

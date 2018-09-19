@@ -34,17 +34,20 @@ public class Settings {
         while (scan.hasNextLine()) {
             String line = scan.nextLine();
             if (!line.isEmpty() && !line.startsWith("#")) {
-                String[] parts = line.split(":");
-                if (parts.length == 3) {
-                    if (parts[0].equals("bool")) {
-                        setBoolean(parts[1], Boolean.parseBoolean(parts[2]));
-                    } else if (parts[0].equals("string")) {
-                        setString(parts[1], parts[2]);
-                    } else if (parts[0].equals("int")) {
-                        setInteger(parts[1], Integer.parseInt(parts[2]));
-                    } else if (parts[0].equals("double")) {
-                        setDouble(parts[1], Double.parseDouble(parts[2]));
-                    }
+                String type = line.substring(0, line.indexOf(':'));
+                line = line.substring(line.indexOf(':') + 1);
+
+                String tag = line.substring(0, line.indexOf(':'));
+                String contents = line.substring(line.indexOf(':') + 1);
+
+                if (type.equals("bool")) {
+                    setBoolean(tag, Boolean.parseBoolean(contents));
+                } else if (type.equals("string")) {
+                    setString(tag, contents);
+                } else if (type.equals("int")) {
+                    setInteger(tag, Integer.parseInt(contents));
+                } else if (type.equals("double")) {
+                    setDouble(tag, Double.parseDouble(contents));
                 }
             }
         }
@@ -53,10 +56,18 @@ public class Settings {
     public synchronized void save(File file) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(file);
 
-        bools.forEach((t, b) -> writer.println("bool:" + t + ":" + b));
-        strings.forEach((t, s) -> writer.println("string:" + t + ":" + s));
-        ints.forEach((t, i) -> writer.println("int:" + t + ":" + i));
-        doubles.forEach((t, d) -> writer.println("double:" + t + ":" + d));
+        bools.forEach((t, b) -> {
+            if (b != null) writer.println("bool:" + t + ":" + b);
+        });
+        strings.forEach((t, s) -> {
+            if (s != null) writer.println("string:" + t + ":" + s);
+        });
+        ints.forEach((t, i) -> {
+            if (i != null) writer.println("int:" + t + ":" + i);
+        });
+        doubles.forEach((t, d) -> {
+            if (d != null) writer.println("double:" + t + ":" + d);
+        });
 
 
         writer.close();
