@@ -1,21 +1,16 @@
 package manimage.common;
 
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.ListIterator;
+import java.util.*;
 
 public class DBInterface {
 
     private static final String SQL_INITIALIZE_TABLES = "CREATE TABLE imgs(img_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, img_path NVARCHAR(1024) UNIQUE, img_src NVARCHAR(1024), img_added LONG NOT NULL, img_tags NVARCHAR(1024));";
 
     private final Connection connection;
-    private final Statement statement;
 
     private final ArrayList<ImageDatabaseUpdateListener> listeners = new ArrayList<>();
 
@@ -25,7 +20,6 @@ public class DBInterface {
     public DBInterface(String path, String username, String password) throws SQLException {
         System.out.println("Attempting to connect to: [jdbc:h2:" + path + "] With user/password: " + username + "/" + password);
         connection = DriverManager.getConnection("jdbc:h2:" + path, username, password);
-        statement = connection.createStatement();
         System.out.println("Connected successfully");
 
         verifyTables();
@@ -36,19 +30,25 @@ public class DBInterface {
         if (!tableExists("imgs", "img_id", "img_path", "img_src", "img_added", "img_tags")) {
             dropTables();
             System.out.println("Initializing tables...");
-            statement.executeUpdate(SQL_INITIALIZE_TABLES);
+            Statement state = connection.createStatement();
+            state.executeUpdate(SQL_INITIALIZE_TABLES);
+            state.close();
         }
         System.out.println("Tables successfully verified");
     }
 
     private synchronized void dropTables() throws SQLException {
         System.out.println("Attempting to drop tables...");
-        statement.executeUpdate("DROP TABLE IF EXISTS imgs;");
+        Statement state = connection.createStatement();
+        state.executeUpdate("DROP TABLE IF EXISTS imgs;");
+        state.close();
     }
 
     private synchronized boolean tableExists(String name, String... columns) {
         try {
-            statement.executeQuery("SELECT TOP 1 " + String.join(",", columns) + " FROM " + name);
+            Statement state = connection.createStatement();
+            state.executeQuery("SELECT TOP 1 " + String.join(",", columns) + " FROM " + name);
+            state.close();
             return true;
         } catch (SQLException e) {
             return false;
@@ -58,50 +58,51 @@ public class DBInterface {
     public synchronized ArrayList<ImageInfo> getImages(int limit, int offset, OrderBy order, String[] tags, String pathContains) throws SQLException {
         StringBuilder query = new StringBuilder("SELECT imgs.* FROM imgs ");
 
-        String ratingSQL = null;
-        String tagsSQL = null;
-        String pathSQL = null;
+        final ArrayList<String> whereParts = new ArrayList<>();
 
-        //Tags search
         if (tags != null && tags.length > 0) {
-            tagsSQL = "(";
-
-            boolean and = false;
-            for (String tag : tags) {
-                if (!tag.isEmpty()) {
-                    if (and) tagsSQL += " AND ";
-                    tagsSQL += "img_tags ";
-                    if (tag.startsWith("-")) {
-                        tagsSQL += "NOT ";
-                        tag = tag.substring(1);
-                    }
-                    tagsSQL += "LIKE '% " + tag + " %'";
-                    and = true;
+            tags = tags.clone();
+            final String[] sqlTagArr = tags.clone();
+            for (int i = 0; i < sqlTagArr.length; i++) {
+                tags[i] = tags[i].toLowerCase();
+                if (sqlTagArr[i].charAt(0) == '-') {
+                    sqlTagArr[i] = "img_tags NOT LIKE ?";
+                    tags[i] = tags[i].substring(1);
                 }
+                else sqlTagArr[i] = "img_tags LIKE ?";
             }
-
-            tagsSQL += ")";
+            whereParts.add(String.join(" AND ", sqlTagArr));
         }
 
         if (pathContains != null && !pathContains.isEmpty()) {
-            pathSQL = "(img_path LIKE '%" + pathContains + "%')";
+            whereParts.add("img_path LIKE ?");
         }
 
-        final ArrayList<String> whereParts = new ArrayList<>();
-        if (ratingSQL != null) whereParts.add(ratingSQL);
-        if (tagsSQL != null) whereParts.add(tagsSQL);
-        if (pathSQL != null) whereParts.add(pathSQL);
-        if (!whereParts.isEmpty()) query.append(" WHERE ");
-        query.append(String.join(" AND ", whereParts));
+        if (!whereParts.isEmpty()) {
+            query.append("WHERE ").append(String.join(" AND ", whereParts));
+        }
 
-        //Order and offset
         if (order != null) query.append(" ORDER BY ").append(order);
         if (limit > 0) query.append(" LIMIT ").append(limit);
         if (offset > 0) query.append(" OFFSET ").append(offset);
         query.append(";");
-        ResultSet rs = statement.executeQuery(query.toString());
 
-        ArrayList<ImageInfo> results = new ArrayList<>();
+        PreparedStatement state = connection.prepareStatement(query.toString());
+        int i = 1;
+
+        if (tags != null && tags.length > 0) {
+            for (String tag : tags) {
+                state.setNString(i, "% " + tag + " %");
+                i++;
+            }
+        }
+
+        if (pathContains != null && !pathContains.isEmpty()) {
+            state.setNString(i, "%" + pathContains + "%");
+        }
+
+        final ResultSet rs = state.executeQuery();
+        final ArrayList<ImageInfo> results = new ArrayList<>();
         while (rs.next()) {
             ImageInfo img = getCachedImg(rs.getInt("img_id"));
             if (img == null) {
@@ -111,41 +112,50 @@ public class DBInterface {
             }
             results.add(img);
         }
+        state.close();
 
         return results;
     }
 
-    private synchronized void addImage(@NotNull String path, String src, String tags, boolean isBatch) throws SQLException {
+    private synchronized void addImage(String path, String src, String tags, boolean isBatch) throws SQLException {
         ArrayList<String> columns = new ArrayList<>();
-        ArrayList<String> values = new ArrayList<>();
+        ArrayList<String> strings = new ArrayList<>();
 
         if (path != null && !path.isEmpty()) {
-            if (path.contains("'")) path = path.replaceAll("'", "''");
-            ResultSet rs = statement.executeQuery("SELECT TOP 1 img_id FROM imgs WHERE img_path='" + path + "'");
+            PreparedStatement state = connection.prepareStatement("SELECT TOP 1 img_id FROM imgs WHERE img_path=?");
+            state.setNString(1, path);
+            ResultSet rs = state.executeQuery();
             if (rs.next()) {
                 return;
             }
+            state.close();
             columns.add("img_path");
-            values.add("'" + path + "'");
+            strings.add(path);
         }
         if (src != null && !src.isEmpty()) {
-            if (src.contains("'")) src = src.replaceAll("'", "''");
             columns.add("img_src");
-            values.add("'" + src + "'");
+            strings.add(src);
         }
-        columns.add("img_added");
-        values.add(Long.toString(System.currentTimeMillis()));
         if (tags != null && !tags.isEmpty()) {
             columns.add("img_tags");
-            values.add("'" + tags + "'");
+            strings.add(tags);
         }
+        columns.add("img_added");
 
-        statement.executeUpdate("INSERT INTO imgs (" + String.join(",", columns) + ") VALUES (" + String.join(",", values) + ");");
+        PreparedStatement state = connection.prepareStatement("INSERT INTO imgs (" + String.join(",", columns) + ") VALUES (" + String.join(",", Collections.nCopies(strings.size() + 1, "?")) + ")");
+        int i = 1;
+        for (String str : strings) {
+            state.setNString(i, str);
+            i++;
+        }
+        state.setLong(i, System.currentTimeMillis());
+        state.executeUpdate();
+        state.close();
 
         if (!isBatch) notifyChangeListeners();
     }
 
-    public synchronized void addImage(@NotNull String path) throws SQLException {
+    public synchronized void addImage(String path) throws SQLException {
         addImage(path, null, " tagme ", false);
     }
 
@@ -158,31 +168,56 @@ public class DBInterface {
     }
 
     public synchronized void addTag(Iterable<ImageInfo> imgs, String tag, boolean isBatch) throws SQLException {
+        PreparedStatement state = connection.prepareStatement("UPDATE imgs SET img_tags=? WHERE img_id=?;");
         for (ImageInfo img : imgs) {
             if (!Arrays.asList(img.getTags()).contains(tag)) {
                 img.addTag(tag);
-                statement.addBatch("UPDATE imgs SET img_tags='" + imgTagsArrayToString(img.getTags()) + "' WHERE img_id=" + img.getId() + ";");
+                state.setNString(1, imgTagsArrayToString(img.getTags()));
+                state.setInt(2, img.getId());
+                state.executeUpdate();
             }
         }
+        state.close();
 
-        statement.executeBatch();
         if (!isBatch) notifyChangeListeners();
     }
 
     public synchronized void removeTag(Iterable<ImageInfo> imgs, String tag, boolean isBatch) throws SQLException {
+        PreparedStatement state = connection.prepareStatement("UPDATE imgs SET img_tags=? WHERE img_id=?;");
         for (ImageInfo img : imgs) {
             if (Arrays.asList(img.getTags()).contains(tag)) {
                 img.removeTag(tag);
-                statement.addBatch("UPDATE imgs SET img_tags='" + imgTagsArrayToString(img.getTags()) + "' WHERE img_id=" + img.getId() + ";");
+                state.setNString(1, imgTagsArrayToString(img.getTags()));
+                state.setInt(2, img.getId());
+                state.executeUpdate();
             }
         }
+        state.close();
 
-        statement.executeBatch();
         if (!isBatch) notifyChangeListeners();
     }
 
+    public synchronized Map<String, Integer> getTags() throws SQLException {
+        Map<String, Integer> map = new HashMap<>();
+
+        Statement s = connection.createStatement();
+        ResultSet rs = s.executeQuery("SELECT imgs.img_tags FROM imgs");
+        while (rs.next()) {
+            String[] tags = imgTagsStringToArray(rs.getNString(1));
+            for (String tag : tags) {
+                if (map.containsKey(tag)) {
+                    map.put(tag, map.get(tag) + 1);
+                } else {
+                    map.put(tag, 1);
+                }
+            }
+        }
+
+        return map;
+    }
+
     public static String imgTagsArrayToString(String[] tags) {
-        return " " + String.join(" ", tags) + " ";
+        return (" " + String.join(" ", tags) + " ").toLowerCase();
     }
 
     public static String[] imgTagsStringToArray(String img_tags) {
@@ -237,17 +272,22 @@ public class DBInterface {
     }
 
     public synchronized void removeImgs(Iterable<ImageInfo> imgs) throws SQLException {
+        PreparedStatement state = connection.prepareStatement("DELETE FROM imgs WHERE img_id=?");
         for (ImageInfo img : imgs) {
-            statement.addBatch("DELETE FROM imgs WHERE img_id=" + img.getId());
+            state.setInt(1, img.getId());
+            state.executeUpdate();
         }
-        statement.executeBatch();
+        state.close();
         notifyChangeListeners();
     }
 
     public synchronized int getNumImages() throws SQLException {
-        ResultSet rs = statement.executeQuery("SELECT count(img_id) AS count FROM imgs;");
+        Statement state = connection.createStatement();
+        ResultSet rs = state.executeQuery("SELECT count(img_id) AS count FROM imgs;");
         if (rs.next()) {
-            return rs.getInt("count");
+            int count = rs.getInt("count");
+            state.close();
+            return count;
         } else {
             return 0;
         }
