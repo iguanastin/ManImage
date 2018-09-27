@@ -21,24 +21,21 @@
    <center>
       <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" BorderPane.alignment="CENTER">
          <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
          </padding>
-         <children>
-            <HBox alignment="CENTER_LEFT" prefWidth="200.0" spacing="5.0">
-               <children>
-                  <CheckBox fx:id="autoAddDroppedCheckbox" mnemonicParsing="false" onAction="#autoAddDroppedOnAction" text="Automatically add files dragged from web" />
-               </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </HBox>
-            <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="15.0" prefWidth="200.0" spacing="5.0">
-               <children>
-                  <TextField fx:id="lastFolderTextField" disable="true" editable="false" promptText="Folder to save files to" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="lastFolderBrowseButton" disable="true" mnemonicParsing="false" text="Browse" onAction="#lastFolderBrowseButtonOnAction"/>
-               </children>
-            </HBox>
-         </children>
+         <HBox alignment="CENTER_LEFT" prefWidth="200.0" spacing="5.0">
+            <VBox.margin>
+               <Insets/>
+            </VBox.margin>
+            <CheckBox fx:id="autoAddDroppedCheckbox" mnemonicParsing="false" onAction="#autoAddDroppedOnAction"
+                      text="Automatically add files dragged from web"/>
+         </HBox>
+         <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="15.0" prefWidth="200.0" spacing="5.0">
+            <TextField fx:id="lastFolderTextField" disable="true" editable="false"
+                       promptText="Folder to save files to" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="lastFolderBrowseButton" disable="true" mnemonicParsing="false" text="Browse"
+                    onAction="#lastFolderBrowseButtonOnAction"/>
+         </HBox>
       </VBox>
    </center>
 </BorderPane>
